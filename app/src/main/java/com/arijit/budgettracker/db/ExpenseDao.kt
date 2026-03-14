@@ -23,4 +23,10 @@ interface ExpenseDao {
 
     @Query("DELETE FROM expenses")
     suspend fun deleteAll()
+
+    @Query("SELECT * FROM expenses WHERE synced = 0")
+    suspend fun getUnsyncedExpenses(): List<Expense>
+
+    @Query("UPDATE expenses SET synced = 1 WHERE id IN (:ids)")
+    suspend fun markAsSynced(ids: List<Int>)
 }

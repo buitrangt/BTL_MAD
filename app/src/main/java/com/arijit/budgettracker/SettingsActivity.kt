@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.arijit.budgettracker.utils.TokenManager
 import com.arijit.budgettracker.utils.Vibration
 import com.arijit.budgettracker.utils.CurrencyPrefs
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -74,6 +75,15 @@ class SettingsActivity : AppCompatActivity() {
             val url = "https://arijit-05.github.io/website/"
             val intent = Intent(Intent.ACTION_VIEW, url.toUri())
             startActivity(intent)
+        }
+
+        val logout = findViewById<CardView>(R.id.logout)
+        logout.setOnClickListener {
+            Vibration.vibrate(this, 50)
+            TokenManager.logout(this)
+            startActivity(Intent(this, LoginActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK))
+            finish()
         }
     }
 }

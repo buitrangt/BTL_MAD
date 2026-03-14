@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.db.ExpenseDatabase
+import com.arijit.budgettracker.utils.SyncManager
 import com.arijit.budgettracker.utils.Vibration
 import com.arijit.budgettracker.utils.ViewPagerAdapter
 import com.google.android.material.tabs.TabLayout
@@ -89,6 +90,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
         // === END FAKE DATA ===
+
+        // Sync unsynced expenses when app opens
+        lifecycleScope.launch {
+            SyncManager.syncIfOnline(applicationContext)
+        }
 
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {

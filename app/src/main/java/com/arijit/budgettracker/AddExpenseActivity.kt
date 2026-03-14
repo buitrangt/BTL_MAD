@@ -15,6 +15,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.db.ExpenseDatabase
+import com.arijit.budgettracker.utils.SyncManager
 import com.arijit.budgettracker.utils.Vibration
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -88,6 +89,7 @@ class AddExpenseActivity : AppCompatActivity() {
                     val expense =
                         Expense(amount = finalExpenseAmt.toDouble(), category = catgSelected)
                     dao.insertExpense(expense)
+                    SyncManager.syncIfOnline(applicationContext)
                     finish()
                 }
             }

@@ -52,4 +52,10 @@ dependencies {
     kapt ("androidx.room:room-compiler:2.7.2")
     implementation("com.airbnb.android:lottie:6.6.7")
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
+    // Retrofit + OkHttp
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 }
