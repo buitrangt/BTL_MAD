@@ -26,13 +26,16 @@
         android:theme="@style/Theme.BudgetTracker"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".ForgotPassword"
+            android:name=".VerifyOtpActivity"
             android:exported="false" />
         <activity
-            android:name=".ResetPassword"
+            android:name=".ForgotPasswordActivity"
             android:exported="false" />
         <activity
-            android:name=".AccountSetting"
+            android:name=".ResetPasswordActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AccountSettingActivity"
             android:exported="false" />
         <activity
             android:name=".UserProfileActivity"
