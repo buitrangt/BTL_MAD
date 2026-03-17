@@ -43,7 +43,7 @@ class LoginActivity : AppCompatActivity() {
         val btnLogin = findViewById<MaterialButton>(R.id.btn_login)
         val tvError = findViewById<TextView>(R.id.tv_error)
         val tvRegister = findViewById<TextView>(R.id.tv_register)
-
+        val tvForgotPassword = findViewById<TextView>(R.id.tv_forgot_pw)
         btnLogin.setOnClickListener {
             val email = etEmail.text.toString().trim()
             val password = etPassword.text.toString().trim()
@@ -83,6 +83,11 @@ class LoginActivity : AppCompatActivity() {
 
         tvRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
+        }
+        // Thiết lập điều hướng Quên mật khẩu
+        tvForgotPassword.setOnClickListener {
+            val intent = Intent(this, ResetPassword::class.java)
+            startActivity(intent)
         }
     }
 }
