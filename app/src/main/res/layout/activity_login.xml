@@ -127,6 +127,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:layout_marginTop="12dp"
+                android:padding="4dp"
                 android:text="Quên mật khẩu?"
                 android:textColor="#3B82F6"
                 android:textSize="12sp" />
