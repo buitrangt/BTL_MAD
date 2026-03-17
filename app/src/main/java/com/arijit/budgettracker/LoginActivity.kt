@@ -71,8 +71,8 @@ class LoginActivity : AppCompatActivity() {
                     tvError.text = "Connection error :"+e.message;
                     tvError.visibility = View.VISIBLE
                     // Allow offline access
-                    // startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                    //finish()
+                     startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                    finish()
                 }
                 btnLogin.isEnabled = true
             }

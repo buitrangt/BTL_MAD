@@ -35,8 +35,11 @@ class UserProfileActivity : AppCompatActivity() {
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK))
             finish()
         }
+        // Sự kiện mở trang Cài đặt tài khoản
         account.setOnClickListener {
-            // mở trang chỉnh sửa tài khoản
+//            Vibration.vibrate(this, 30)
+            val intent = Intent(this, AccountSetting::class.java)
+            startActivity(intent)
         }
 
         currency.setOnClickListener {
