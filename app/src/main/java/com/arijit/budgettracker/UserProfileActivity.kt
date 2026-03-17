@@ -1,5 +1,6 @@
 package com.arijit.budgettracker
 
+import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -28,12 +29,10 @@ class UserProfileActivity : AppCompatActivity() {
         val theme = findViewById<RelativeLayout>(R.id.itemTheme)
         val logout = findViewById< Button>(R.id.btnLogout)
 
+        // Cập nhật nút Logout để hiện Popup thay vì chuyển trang ngay
         logout.setOnClickListener {
             Vibration.vibrate(this, 50)
-            TokenManager.logout(this)
-            startActivity(Intent(this, LoginActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK))
-            finish()
+            showLogoutDialog()
         }
         // Sự kiện mở trang Cài đặt tài khoản
         account.setOnClickListener {
@@ -53,5 +52,39 @@ class UserProfileActivity : AppCompatActivity() {
         theme.setOnClickListener {
             // đổi dark mode
         }
+    }
+
+    // Hàm tạo và hiển thị Popup Logout
+    private fun showLogoutDialog() {
+        val dialog = Dialog(this)
+        // Nạp layout popup bạn đã sửa (Nút Đỏ trên, Nút Trắng dưới)
+        dialog.setContentView(R.layout.layout_logout_dialog)
+
+        // Áp dụng Style Animation bạn vừa tạo
+        dialog.window?.setWindowAnimations(R.style.DialogAnimation)
+
+        // Làm nền mặc định của Dialog trong suốt để hiện thị CardView bo góc
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val btnConfirm = dialog.findViewById<Button>(R.id.btnConfirmLogout)
+        val btnCancel = dialog.findViewById<Button>(R.id.btnCancel)
+
+        // Xử lý nút Đăng xuất (Màu đỏ)
+        btnConfirm.setOnClickListener {
+            dialog.dismiss()
+            TokenManager.logout(this)
+            val intent = Intent(this, LoginActivity::class.java)
+            // Xóa hết các Activity cũ để tránh người dùng nhấn Back quay lại được
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            finish()
+        }
+
+        // Xử lý nút Hủy
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 }
