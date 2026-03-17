@@ -1,7 +1,7 @@
 package com.arijit.budgettracker
 
+import android.content.Intent
 import android.os.Bundle
-import android.view.View
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
@@ -12,7 +12,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 
-class ResetPassword : AppCompatActivity() {
+class ResetPasswordActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,6 +72,8 @@ class ResetPassword : AppCompatActivity() {
 //        Toast.makeText(this, "Đang cập nhật mật khẩu...", Toast.LENGTH_SHORT).show()
 
         // Sau khi thành công có thể quay lại Login
+        val intent = Intent(this, LoginActivity::class.java)
+        startActivity(intent)
         // finish()
     }
 }

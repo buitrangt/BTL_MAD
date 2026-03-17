@@ -7,7 +7,6 @@ import android.widget.Button
 import android.widget.RelativeLayout
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.cardview.widget.CardView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.arijit.budgettracker.utils.TokenManager
@@ -37,7 +36,7 @@ class UserProfileActivity : AppCompatActivity() {
         // Sự kiện mở trang Cài đặt tài khoản
         account.setOnClickListener {
 //            Vibration.vibrate(this, 30)
-            val intent = Intent(this, AccountSetting::class.java)
+            val intent = Intent(this, AccountSettingActivity::class.java)
             startActivity(intent)
         }
 

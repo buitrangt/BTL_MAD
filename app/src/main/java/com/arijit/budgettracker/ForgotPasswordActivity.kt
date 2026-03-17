@@ -12,7 +12,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
 
-class ForgotPassword : AppCompatActivity() {
+class ForgotPasswordActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,7 +67,7 @@ class ForgotPassword : AppCompatActivity() {
         Toast.makeText(this, "Đã gửi mã xác nhận đến: $email", Toast.LENGTH_LONG).show()
 
         // Sau khi gọi API thành công, thường sẽ chuyển sang màn hình ResetPassword
-        // val intent = Intent(this, ResetPassword::class.java)
-        // startActivity(intent)
+         val intent = Intent(this, VerifyOtpActivity::class.java)
+         startActivity(intent)
     }
 }
