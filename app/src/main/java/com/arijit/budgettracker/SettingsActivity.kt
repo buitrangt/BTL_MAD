@@ -85,5 +85,14 @@ class SettingsActivity : AppCompatActivity() {
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK))
             finish()
         }
+        val cardProfile = findViewById<CardView>(R.id.cardProfile)
+
+        cardProfile.setOnClickListener {
+            // Rung một chút nếu bạn dùng lớp Vibration của mình
+            // Vibration.vibrate(this, 30)
+
+            val intent = Intent(this, UserProfileActivity::class.java)
+            startActivity(intent)
+        }
     }
 }
