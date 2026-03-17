@@ -13,7 +13,6 @@ import com.arijit.budgettracker.api.AuthRequest
 import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.utils.TokenManager
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
 
 class RegisterActivity : AppCompatActivity() {
@@ -27,9 +26,9 @@ class RegisterActivity : AppCompatActivity() {
             insets
         }
 
-        val etName = findViewById<TextInputEditText>(R.id.et_name)
-        val etEmail = findViewById<TextInputEditText>(R.id.et_email)
-        val etPassword = findViewById<TextInputEditText>(R.id.et_password)
+        val etName = findViewById<android.widget.EditText>(R.id.et_name)
+        val etEmail = findViewById<android.widget.EditText>(R.id.et_email)
+        val etPassword = findViewById<android.widget.EditText>(R.id.et_password)
         val btnRegister = findViewById<MaterialButton>(R.id.btn_register)
         val tvError = findViewById<TextView>(R.id.tv_error)
         val tvLogin = findViewById<TextView>(R.id.tv_login)
