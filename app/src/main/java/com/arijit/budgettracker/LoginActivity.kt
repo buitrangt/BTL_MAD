@@ -86,7 +86,7 @@ class LoginActivity : AppCompatActivity() {
         }
         // Thiết lập điều hướng Quên mật khẩu
         tvForgotPassword.setOnClickListener {
-            val intent = Intent(this, ResetPassword::class.java)
+            val intent = Intent(this, ForgotPassword::class.java)
             startActivity(intent)
         }
     }
