@@ -13,7 +13,6 @@ import com.arijit.budgettracker.api.AuthRequest
 import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.utils.TokenManager
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
@@ -29,14 +28,18 @@ class LoginActivity : AppCompatActivity() {
 
         enableEdgeToEdge()
         setContentView(R.layout.activity_login)
+        // Trong onCreate, thay thế đoạn setOnApplyWindowInsetsListener cũ bằng đoạn này:
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            // Chỉ lấy Top và Bottom để chống tràn vào Status Bar và Navigation Bar
+            // Phần Left và Right chúng ta giữ nguyên (0) vì đã dùng Guideline 24dp trong XML
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
-        val etEmail = findViewById<TextInputEditText>(R.id.et_email)
-        val etPassword = findViewById<TextInputEditText>(R.id.et_password)
+        val etEmail = findViewById<android.widget.EditText>(R.id.et_email)
+        val etPassword = findViewById<android.widget.EditText>(R.id.et_password)
         val btnLogin = findViewById<MaterialButton>(R.id.btn_login)
         val tvError = findViewById<TextView>(R.id.tv_error)
         val tvRegister = findViewById<TextView>(R.id.tv_register)
