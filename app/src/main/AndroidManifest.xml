@@ -26,6 +26,9 @@
         android:theme="@style/Theme.BudgetTracker"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".FinChatActivity"
+            android:exported="false" />
+        <activity
             android:name=".VerifyOtpActivity"
             android:exported="false" />
         <activity
