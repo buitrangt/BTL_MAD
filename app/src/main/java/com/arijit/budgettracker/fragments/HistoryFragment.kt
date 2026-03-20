@@ -35,7 +35,7 @@ class HistoryFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_history, container, false)
-        containerRv = view.findViewById(R.id.container_rv)
+        containerRv = view.findViewById(R.id.rvHistory)
         historyAdapter = HistoryAdapter()
 
         containerRv.layoutManager = LinearLayoutManager(requireContext())
