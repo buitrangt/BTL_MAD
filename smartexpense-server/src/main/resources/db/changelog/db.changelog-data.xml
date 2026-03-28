@@ -1,0 +1,653 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <!-- ============================================ -->
+    <!-- AUTH SERVICE                                 -->
+    <!-- ============================================ -->
+
+    <!-- users -->
+    <changeSet id="001-create-users" author="smartexpense">
+        <createTable tableName="users">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="password_hash" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="phone" type="VARCHAR(20)"/>
+            <column name="role" type="VARCHAR(20)" defaultValue="USER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="locked" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="password_changed_at" type="TIMESTAMP"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="users" indexName="idx_users_email">
+            <column name="email"/>
+        </createIndex>
+        <createIndex tableName="users" indexName="idx_users_role">
+            <column name="role"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- password_reset_tokens -->
+    <changeSet id="002-create-password-reset-tokens" author="smartexpense">
+        <createTable tableName="password_reset_tokens">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="token" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="expires_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="used" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="password_reset_tokens" indexName="idx_prt_token">
+            <column name="token"/>
+        </createIndex>
+        <createIndex tableName="password_reset_tokens" indexName="idx_prt_user_id">
+            <column name="user_id"/>
+        </createIndex>
+
+        <addForeignKeyConstraint
+            baseTableName="password_reset_tokens" baseColumnNames="user_id"
+            referencedTableName="users" referencedColumnNames="id"
+            constraintName="fk_prt_user_id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- otp_codes -->
+    <changeSet id="003-create-otp-codes" author="smartexpense">
+        <createTable tableName="otp_codes">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expires_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="used" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="otp_codes" indexName="idx_otp_user_id">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex tableName="otp_codes" indexName="idx_otp_user_type">
+            <column name="user_id"/>
+            <column name="type"/>
+        </createIndex>
+
+        <addForeignKeyConstraint
+            baseTableName="otp_codes" baseColumnNames="user_id"
+            referencedTableName="users" referencedColumnNames="id"
+            constraintName="fk_otp_user_id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- ============================================ -->
+    <!-- TRANSACTION SERVICE                          -->
+    <!-- ============================================ -->
+
+    <!-- categories (must be created before transactions due to FK) -->
+    <changeSet id="004-create-categories" author="smartexpense">
+        <createTable tableName="categories">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="note" type="VARCHAR(50)"/>
+            <column name="is_default" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <addUniqueConstraint tableName="categories" columnNames="name, user_id"
+                             constraintName="uk_categories_name_user_id"/>
+
+        <createIndex tableName="categories" indexName="idx_categories_is_default">
+            <column name="is_default"/>
+        </createIndex>
+        <createIndex tableName="categories" indexName="idx_categories_user_id">
+            <column name="user_id"/>
+        </createIndex>
+
+        <addForeignKeyConstraint
+            baseTableName="categories" baseColumnNames="user_id"
+            referencedTableName="users" referencedColumnNames="id"
+            constraintName="fk_categories_user_id"
+            onDelete="CASCADE"/>
+
+        <!-- Seed default categories -->
+        <insert tableName="categories">
+            <column name="name" value="Ăn uống"/>
+            <column name="note" value="food"/>
+            <column name="is_default" valueBoolean="true"/>
+        </insert>
+        <insert tableName="categories">
+            <column name="name" value="Di chuyển"/>
+            <column name="note" value="transport"/>
+            <column name="is_default" valueBoolean="true"/>
+        </insert>
+        <insert tableName="categories">
+            <column name="name" value="Mua sắm"/>
+            <column name="note" value="shopping"/>
+            <column name="is_default" valueBoolean="true"/>
+        </insert>
+        <insert tableName="categories">
+            <column name="name" value="Giải trí"/>
+            <column name="note" value="entertainment"/>
+            <column name="is_default" valueBoolean="true"/>
+        </insert>
+        <insert tableName="categories">
+            <column name="name" value="Hóa đơn"/>
+            <column name="note" value="bill"/>
+            <column name="is_default" valueBoolean="true"/>
+        </insert>
+        <insert tableName="categories">
+            <column name="name" value="Sức khỏe"/>
+            <column name="note" value="health"/>
+            <column name="is_default" valueBoolean="true"/>
+        </insert>
+        <insert tableName="categories">
+            <column name="name" value="Giáo dục"/>
+            <column name="note" value="education"/>
+            <column name="is_default" valueBoolean="true"/>
+        </insert>
+        <insert tableName="categories">
+            <column name="name" value="Khác"/>
+            <column name="note" value="other"/>
+            <column name="is_default" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+    <!-- transactions -->
+    <changeSet id="005-create-transactions" author="smartexpense">
+        <createTable tableName="transactions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="amount" type="DECIMAL(18,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="category_id" type="BIGINT"/>
+            <column name="type" type="VARCHAR(20)" defaultValue="EXPENSE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="note" type="TEXT"/>
+            <column name="time_stamp" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="transactions" indexName="idx_transactions_user_id">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex tableName="transactions" indexName="idx_transactions_timestamp">
+            <column name="time_stamp"/>
+        </createIndex>
+        <createIndex tableName="transactions" indexName="idx_transactions_category_id">
+            <column name="category_id"/>
+        </createIndex>
+        <createIndex tableName="transactions" indexName="idx_transactions_user_timestamp">
+            <column name="user_id"/>
+            <column name="time_stamp"/>
+        </createIndex>
+        <createIndex tableName="transactions" indexName="idx_transactions_user_type">
+            <column name="user_id"/>
+            <column name="type"/>
+        </createIndex>
+
+        <addForeignKeyConstraint
+            baseTableName="transactions" baseColumnNames="user_id"
+            referencedTableName="users" referencedColumnNames="id"
+            constraintName="fk_transactions_user_id"
+            onDelete="CASCADE"/>
+        <addForeignKeyConstraint
+            baseTableName="transactions" baseColumnNames="category_id"
+            referencedTableName="categories" referencedColumnNames="id"
+            constraintName="fk_transactions_category_id"
+            onDelete="SET NULL"/>
+    </changeSet>
+
+    <!-- budgets -->
+    <changeSet id="006-create-budgets" author="smartexpense">
+        <createTable tableName="budgets">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="category_id" type="BIGINT"/>
+            <column name="amount" type="DECIMAL(18,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="month" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="year" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="budgets" indexName="idx_budgets_user_month_year">
+            <column name="user_id"/>
+            <column name="month"/>
+            <column name="year"/>
+        </createIndex>
+        <createIndex tableName="budgets" indexName="idx_budgets_category_id">
+            <column name="category_id"/>
+        </createIndex>
+        <addUniqueConstraint tableName="budgets" columnNames="user_id, category_id, month, year"
+                             constraintName="uk_budgets_user_cat_month_year"/>
+
+        <addForeignKeyConstraint
+            baseTableName="budgets" baseColumnNames="user_id"
+            referencedTableName="users" referencedColumnNames="id"
+            constraintName="fk_budgets_user_id"
+            onDelete="CASCADE"/>
+        <addForeignKeyConstraint
+            baseTableName="budgets" baseColumnNames="category_id"
+            referencedTableName="categories" referencedColumnNames="id"
+            constraintName="fk_budgets_category_id"
+            onDelete="SET NULL"/>
+    </changeSet>
+
+    <!-- ============================================ -->
+    <!-- AI SERVICE                                   -->
+    <!-- ============================================ -->
+
+    <!-- ai_predictions -->
+    <changeSet id="007-create-ai-predictions" author="smartexpense">
+        <createTable tableName="ai_predictions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="month" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="year" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="current_amount" type="DECIMAL(18,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="predicted_amount" type="DECIMAL(18,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)" defaultValue="PROCESSING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <addUniqueConstraint tableName="ai_predictions" columnNames="user_id, month, year"
+                             constraintName="uk_ai_predictions_user_month_year"/>
+
+        <addForeignKeyConstraint
+            baseTableName="ai_predictions" baseColumnNames="user_id"
+            referencedTableName="users" referencedColumnNames="id"
+            constraintName="fk_ai_predictions_user_id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- ai_anomalies -->
+    <changeSet id="008-create-ai-anomalies" author="smartexpense">
+        <createTable tableName="ai_anomalies">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="month" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="year" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="category_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount_diff" type="DECIMAL(18,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="percent_increase" type="DECIMAL(5,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)" defaultValue="PROCESSING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="ai_anomalies" indexName="idx_ai_anomalies_user_month_year">
+            <column name="user_id"/>
+            <column name="month"/>
+            <column name="year"/>
+        </createIndex>
+        <createIndex tableName="ai_anomalies" indexName="idx_ai_anomalies_category">
+            <column name="category_id"/>
+        </createIndex>
+        <addUniqueConstraint tableName="ai_anomalies" columnNames="user_id, category_id, month, year"
+                             constraintName="uk_ai_anomalies_user_cat_month_year"/>
+
+        <addForeignKeyConstraint
+            baseTableName="ai_anomalies" baseColumnNames="user_id"
+            referencedTableName="users" referencedColumnNames="id"
+            constraintName="fk_ai_anomalies_user_id"
+            onDelete="CASCADE"/>
+        <addForeignKeyConstraint
+            baseTableName="ai_anomalies" baseColumnNames="category_id"
+            referencedTableName="categories" referencedColumnNames="id"
+            constraintName="fk_ai_anomalies_category_id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- ai_classifications -->
+    <changeSet id="009-create-ai-classifications" author="smartexpense">
+        <createTable tableName="ai_classifications">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="month" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="year" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="level" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="note" type="TEXT"/>
+            <column name="status" type="VARCHAR(20)" defaultValue="PROCESSING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <addUniqueConstraint tableName="ai_classifications" columnNames="user_id, month, year"
+                             constraintName="uk_ai_classifications_user_month_year"/>
+
+        <addForeignKeyConstraint
+            baseTableName="ai_classifications" baseColumnNames="user_id"
+            referencedTableName="users" referencedColumnNames="id"
+            constraintName="fk_ai_classifications_user_id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- ai_budget_suggestions -->
+    <changeSet id="010-create-ai-budget-suggestions" author="smartexpense">
+        <createTable tableName="ai_budget_suggestions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="category_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="month" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="year" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="suggested_amount" type="DECIMAL(18,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)" defaultValue="PROCESSING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="ai_budget_suggestions" indexName="idx_ai_budget_sug_user_month_year">
+            <column name="user_id"/>
+            <column name="month"/>
+            <column name="year"/>
+        </createIndex>
+        <createIndex tableName="ai_budget_suggestions" indexName="idx_ai_budget_sug_category">
+            <column name="category_id"/>
+        </createIndex>
+        <addUniqueConstraint tableName="ai_budget_suggestions" columnNames="user_id, category_id, month, year"
+                             constraintName="uk_ai_budget_sug_user_cat_month_year"/>
+
+        <addForeignKeyConstraint
+            baseTableName="ai_budget_suggestions" baseColumnNames="user_id"
+            referencedTableName="users" referencedColumnNames="id"
+            constraintName="fk_ai_budget_sug_user_id"
+            onDelete="CASCADE"/>
+        <addForeignKeyConstraint
+            baseTableName="ai_budget_suggestions" baseColumnNames="category_id"
+            referencedTableName="categories" referencedColumnNames="id"
+            constraintName="fk_ai_budget_sug_category_id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- chat_messages -->
+    <changeSet id="011-create-chat-messages" author="smartexpense">
+        <createTable tableName="chat_messages">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="session_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="chat_messages" indexName="idx_chat_messages_user_id">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex tableName="chat_messages" indexName="idx_chat_session_id">
+            <column name="session_id"/>
+        </createIndex>
+        <createIndex tableName="chat_messages" indexName="idx_chat_user_session">
+            <column name="user_id"/>
+            <column name="session_id"/>
+        </createIndex>
+        <createIndex tableName="chat_messages" indexName="idx_chat_user_created">
+            <column name="user_id"/>
+            <column name="created_at"/>
+        </createIndex>
+
+        <addForeignKeyConstraint
+            baseTableName="chat_messages" baseColumnNames="user_id"
+            referencedTableName="users" referencedColumnNames="id"
+            constraintName="fk_chat_messages_user_id"
+            onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- ============================================ -->
+    <!-- SMS SERVICE                                  -->
+    <!-- ============================================ -->
+
+    <!-- sms_transactions -->
+    <changeSet id="012-create-sms-transactions" author="smartexpense">
+        <createTable tableName="sms_transactions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="transaction_id" type="BIGINT"/>
+            <column name="sender" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="raw_content" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="parsed_amount" type="DECIMAL(18,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="parsed_category_id" type="BIGINT"/>
+            <column name="status" type="VARCHAR(20)" defaultValue="PENDING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="transaction_time" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="sms_transactions" indexName="idx_sms_tx_user_id">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex tableName="sms_transactions" indexName="idx_sms_tx_status">
+            <column name="status"/>
+        </createIndex>
+        <createIndex tableName="sms_transactions" indexName="idx_sms_tx_user_status">
+            <column name="user_id"/>
+            <column name="status"/>
+        </createIndex>
+        <createIndex tableName="sms_transactions" indexName="idx_sms_tx_transaction_time">
+            <column name="transaction_time"/>
+        </createIndex>
+        <createIndex tableName="sms_transactions" indexName="idx_sms_tx_parsed_category">
+            <column name="parsed_category_id"/>
+        </createIndex>
+
+        <addForeignKeyConstraint
+            baseTableName="sms_transactions" baseColumnNames="user_id"
+            referencedTableName="users" referencedColumnNames="id"
+            constraintName="fk_sms_tx_user_id"
+            onDelete="CASCADE"/>
+        <addForeignKeyConstraint
+            baseTableName="sms_transactions" baseColumnNames="transaction_id"
+            referencedTableName="transactions" referencedColumnNames="id"
+            constraintName="fk_sms_tx_transaction_id"
+            onDelete="SET NULL"/>
+        <addForeignKeyConstraint
+            baseTableName="sms_transactions" baseColumnNames="parsed_category_id"
+            referencedTableName="categories" referencedColumnNames="id"
+            constraintName="fk_sms_tx_parsed_category_id"
+            onDelete="SET NULL"/>
+    </changeSet>
+
+    <!-- sms_templates -->
+    <changeSet id="013-create-sms-templates" author="smartexpense">
+        <createTable tableName="sms_templates">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="sender_pattern" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount_regex" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="bank_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INT" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <createIndex tableName="sms_templates" indexName="idx_sms_tpl_sender_pattern">
+            <column name="sender_pattern"/>
+        </createIndex>
+        <createIndex tableName="sms_templates" indexName="idx_sms_tpl_bank_name">
+            <column name="bank_name"/>
+        </createIndex>
+        <createIndex tableName="sms_templates" indexName="idx_sms_tpl_is_active">
+            <column name="is_active"/>
+        </createIndex>
+
+        <!-- Seed default Vietnamese bank templates -->
+        <insert tableName="sms_templates">
+            <column name="sender_pattern" value="Vietcombank"/>
+            <column name="amount_regex" value="GD: -(\d[\d,.]+)VND"/>
+            <column name="type" value="DEBIT"/>
+            <column name="bank_name" value="Vietcombank"/>
+        </insert>
+        <insert tableName="sms_templates">
+            <column name="sender_pattern" value="BIDV"/>
+            <column name="amount_regex" value="GD: -(\d[\d,.]+)VND"/>
+            <column name="type" value="DEBIT"/>
+            <column name="bank_name" value="BIDV"/>
+        </insert>
+        <insert tableName="sms_templates">
+            <column name="sender_pattern" value="Techcombank"/>
+            <column name="amount_regex" value="GD: -(\d[\d,.]+)VND"/>
+            <column name="type" value="DEBIT"/>
+            <column name="bank_name" value="Techcombank"/>
+        </insert>
+        <insert tableName="sms_templates">
+            <column name="sender_pattern" value="MOMO"/>
+            <column name="amount_regex" value="(\d[\d,.]+)d"/>
+            <column name="type" value="DEBIT"/>
+            <column name="bank_name" value="MoMo"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
