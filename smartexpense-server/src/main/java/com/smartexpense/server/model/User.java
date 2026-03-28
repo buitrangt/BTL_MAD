@@ -23,6 +23,14 @@ public class User {
 
     private String name;
 
+    private String role;
+
+    private Boolean locked;
+
+    private String phone;
+
+    private LocalDateTime passwordChangedAt;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 

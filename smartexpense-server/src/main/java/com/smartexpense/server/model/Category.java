@@ -5,40 +5,36 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "expenses")
+@Table(name = "categories", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"name", "user_id"})
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Expense {
+public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private Double amount;
+    private String name;
 
-    @Column(nullable = false)
-    private String category;
+    private String note;
 
-    @Column(name = "time_stamp", nullable = false)
-    private Long timeStamp;
+    @Column(name = "is_default", nullable = false)
+    private Boolean isDefault;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
+    @Column(updatable = false)
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        if (isDefault == null) isDefault = false;
     }
 }
