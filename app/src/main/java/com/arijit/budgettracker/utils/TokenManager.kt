@@ -26,6 +26,11 @@ object TokenManager {
             .apply()
     }
 
+    fun getName(context: Context): String? {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_NAME, null)
+    }
+
     fun isLoggedIn(context: Context): Boolean {
         return getToken(context) != null
     }
