@@ -1,5 +1,6 @@
 package com.arijit.budgettracker.api
 
+import com.arijit.budgettracker.models.User
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -41,4 +42,12 @@ interface ApiService {
 
     @GET("api/stats/by-category")
     suspend fun getByCategoryStats(): Response<StatsResponse>
+
+    @GET("api/users/profile")
+    suspend fun getUserProfile(): Response<User>
+
+    @PUT("api/users/profile")
+    suspend fun updateProfile(
+        @Body request: UpdateProfileRequest
+    ): Response<Void>
 }

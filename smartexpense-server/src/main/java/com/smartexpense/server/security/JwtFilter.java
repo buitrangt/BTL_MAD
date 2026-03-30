@@ -25,13 +25,19 @@ public class JwtFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String header = request.getHeader("Authorization");
+
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
             if (jwtUtil.isTokenValid(token)) {
                 String email = jwtUtil.extractEmail(token);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                System.out.println("User authorities: " + userDetails.getAuthorities());
                 var auth = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, Collections.emptyList());
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities() // <--- Lấy quyền thực tế của User
+                );
+
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }

@@ -7,5 +7,7 @@ data class User(
     val phone: String?,
     val role: String?,
     val locked: Int?, // 0: Active, 1: Locked
-    val createdAt: String? = null
+    val createdAt: String? = null,
+    val passwordHash: String? = null,
+    val passwordChangedAt: String? = null
 )

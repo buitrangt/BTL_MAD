@@ -72,7 +72,8 @@ class LoginActivity : AppCompatActivity() {
                         TokenManager.saveUser(
                             this@LoginActivity,
                             authResponse.email,
-                            authResponse.name ?: ""
+                            authResponse.name ?: "",
+                            authResponse.phone ?: ""
                         )
 
                         startActivity(Intent(this@LoginActivity, MainActivity::class.java))

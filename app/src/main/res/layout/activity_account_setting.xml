@@ -84,6 +84,8 @@
                         android:id="@+id/edtEmail"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
+                        android:focusable="false"
+                        android:clickable="false"
                         android:text="user123@finbot.ai"
                         android:background="@drawable/bg_edittext_gray"
                         android:paddingHorizontal="12dp"

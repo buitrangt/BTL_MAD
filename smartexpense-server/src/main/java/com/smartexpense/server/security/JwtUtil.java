@@ -32,17 +32,22 @@ public class JwtUtil {
     }
 
     public String extractEmail(String token) {
-        return getClaims(token).getSubject();
-    }
+    Claims claims = getClaims(token);
+    return claims.getSubject(); // Hoặc thử claims.get("sub", String.class);
+}
 
-    public boolean isTokenValid(String token) {
-        try {
-            getClaims(token);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+    // QUAN TRỌNG: Kiểm tra lại hàm isTokenValid
+public boolean isTokenValid(String token) {
+    try {
+        Claims claims = getClaims(token);
+        // Phải kiểm tra thêm xem token đã hết hạn chưa
+        return !claims.getExpiration().before(new Date());
+    } catch (Exception e) {
+        // Log lỗi ra để biết tại sao nó false (sai key, hết hạn, hay format đểu)
+        System.out.println("JWT Error: " + e.getMessage());
+        return false;
     }
+}
 
     private Claims getClaims(String token) {
         return Jwts.parser()
