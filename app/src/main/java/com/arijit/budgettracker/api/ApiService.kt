@@ -4,8 +4,6 @@ import retrofit2.Response
 import retrofit2.http.*
 
 // DTOs
-data class AuthRequest(val email: String, val password: String, val name: String? = null)
-data class AuthResponse(val token: String, val email: String, val name: String?)
 data class ExpenseRequest(val amount: Double, val category: String, val timeStamp: Long)
 data class ExpenseResponse(val id: Long, val amount: Double, val category: String, val timeStamp: Long)
 data class StatsResponse(val totalAmount: Double, val categoryBreakdown: Map<String, Double>?)

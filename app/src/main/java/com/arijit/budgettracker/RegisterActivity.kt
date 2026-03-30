@@ -20,6 +20,7 @@ class RegisterActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_register)
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -45,27 +46,34 @@ class RegisterActivity : AppCompatActivity() {
             }
 
             btnRegister.isEnabled = false
+            tvError.visibility = View.GONE
+
             lifecycleScope.launch {
                 try {
+                    // Truyền null cho phone vì sẽ cập nhật sau ở Profile
                     val response = RetrofitClient.getApiService(this@RegisterActivity)
-                        .register(AuthRequest(email, password, name))
+                        .register(AuthRequest(
+                            email = email,
+                            password = password,
+                            name = name,
+                            phone = null
+                        ))
 
                     if (response.isSuccessful && response.body() != null) {
-                        val authResponse = response.body()!!
-                        TokenManager.saveToken(this@RegisterActivity, authResponse.token)
-                        TokenManager.saveUser(this@RegisterActivity, authResponse.email, authResponse.name)
-                        startActivity(Intent(this@RegisterActivity, MainActivity::class.java)
+
+                        startActivity(Intent(this@RegisterActivity, LoginActivity::class.java)
                             .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK))
                         finish()
                     } else {
-                        tvError.text = "Registration failed. Email may already exist."
+                        tvError.text = "Error: ${response.code()} - ${response.errorBody()?.string()}"
                         tvError.visibility = View.VISIBLE
                     }
                 } catch (e: Exception) {
-                    tvError.text = "Connection error: ${e.message}"
+                    tvError.text = "Connection error: ${e.localizedMessage}"
                     tvError.visibility = View.VISIBLE
+                } finally {
+                    btnRegister.isEnabled = true
                 }
-                btnRegister.isEnabled = true
             }
         }
 

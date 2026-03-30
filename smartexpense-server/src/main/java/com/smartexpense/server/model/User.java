@@ -23,9 +23,13 @@ public class User {
 
     private String name;
 
-    private String role;
+    @Builder.Default
+    @Column(nullable = false)
+    private String role = "USER";
 
-    private Boolean locked;
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean locked = false;
 
     private String phone;
 
