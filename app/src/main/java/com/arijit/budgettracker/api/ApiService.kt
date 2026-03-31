@@ -61,4 +61,10 @@ interface ApiService {
 
     @POST("api/auth/reset-password")
     suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<ResponseBody>
+
+    @POST("api/finchat/ask")
+    suspend fun askFinChat(
+        @Query("message") message: String,
+        @Query("userId") userId: Long
+    ): Response<String>
 }
