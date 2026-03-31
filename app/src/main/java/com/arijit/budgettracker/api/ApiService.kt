@@ -1,6 +1,7 @@
 package com.arijit.budgettracker.api
 
 import com.arijit.budgettracker.models.User
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -8,6 +9,7 @@ import retrofit2.http.*
 data class ExpenseRequest(val amount: Double, val category: String, val timeStamp: Long)
 data class ExpenseResponse(val id: Long, val amount: Double, val category: String, val timeStamp: Long)
 data class StatsResponse(val totalAmount: Double, val categoryBreakdown: Map<String, Double>?)
+data class ResetPasswordRequest(val email: String, val newPassword: String)
 
 interface ApiService {
     // Auth
@@ -50,4 +52,13 @@ interface ApiService {
     suspend fun updateProfile(
         @Body request: UpdateProfileRequest
     ): Response<Void>
+
+    @POST("api/auth/forgot-password")
+    suspend fun forgotPassword(@Query("email") email: String): Response<ResponseBody>
+
+    @POST("api/auth/verify-otp")
+    suspend fun verifyOtp(@Query("email") email: String, @Query("otp") otp: String): Response<ResponseBody>
+
+    @POST("api/auth/reset-password")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<ResponseBody>
 }
