@@ -28,6 +28,7 @@ class HistoryAdapter : ListAdapter<DailyExpense, HistoryAdapter.HistoryViewHolde
     inner class HistoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val textViewDate: TextView = itemView.findViewById(R.id.date)
         val expenseRecyclerView: RecyclerView = itemView.findViewById(R.id.expense_rv)
+        val totalAmount: TextView? = itemView.findViewById(R.id.total_amount)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryViewHolder {
@@ -40,10 +41,16 @@ class HistoryAdapter : ListAdapter<DailyExpense, HistoryAdapter.HistoryViewHolde
         val dailyExpense = getItem(position)
         holder.textViewDate.text = dailyExpense.date
 
-        // Reuse existing adapter if available, otherwise create new one
+        if (holder.expenseRecyclerView.layoutManager == null) {
+            holder.expenseRecyclerView.layoutManager = LinearLayoutManager(holder.itemView.context)
+            holder.expenseRecyclerView.isNestedScrollingEnabled = false
+        }
+
         val innerAdapter = holder.expenseRecyclerView.adapter as? ExpenseAdapter ?: ExpenseAdapter()
-        holder.expenseRecyclerView.layoutManager = LinearLayoutManager(holder.itemView.context)
         holder.expenseRecyclerView.adapter = innerAdapter
         innerAdapter.submitList(dailyExpense.expenses)
+
+        // Nếu hist_item.xml có total_amount thì set ở đây
+        holder.totalAmount?.text = ""
     }
 }
