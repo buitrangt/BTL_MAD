@@ -26,6 +26,24 @@
         android:theme="@style/Theme.BudgetTracker"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".DeleteCategoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".DeleteTransDialogActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SelectDateActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SelectCategory"
+            android:exported="false" />
+        <activity
+            android:name=".utils.SelectCategoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AddTransActivity"
+            android:exported="false" />
+        <activity
             android:name=".FinChatActivity"
             android:exported="false" />
         <activity

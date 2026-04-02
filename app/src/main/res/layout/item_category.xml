@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_category_item"
+    android:padding="16dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:minHeight="90dp">
+
+    <TextView
+        android:id="@+id/tvCategoryName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ăn uống"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="#1A1A1A"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tvCategorySub"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Siêu thị, Nhà hàng"
+        android:textSize="12sp"
+        android:textColor="#AAAAAA"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+</LinearLayout>

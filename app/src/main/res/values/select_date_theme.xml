@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Header ngày trong tuần (S M T W T F S) -->
+    <style name="SelectDate.DayHeader">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">#AAAAAA</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+</resources>
