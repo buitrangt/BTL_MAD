@@ -3,12 +3,14 @@ package com.smartexpense.server.dto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+
+import java.math.BigDecimal;
 import java.util.Map;
 
 @Data
 @AllArgsConstructor
 @Builder
 public class StatsResponse {
-    private Double totalAmount;
-    private Map<String, Double> categoryBreakdown;
+    private BigDecimal totalAmount;
+    private Map<String, BigDecimal> categoryBreakdown;
 }

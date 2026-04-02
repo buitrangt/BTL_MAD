@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+// Import đúng class từ package api
 import com.arijit.budgettracker.api.AuthRequest
 import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.utils.TokenManager
@@ -19,7 +20,7 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Skip login if already authenticated
+        // Kiểm tra đăng nhập (giữ nguyên)
         if (TokenManager.isLoggedIn(this)) {
             startActivity(Intent(this, MainActivity::class.java))
             finish()
@@ -28,12 +29,9 @@ class LoginActivity : AppCompatActivity() {
 
         enableEdgeToEdge()
         setContentView(R.layout.activity_login)
-        // Trong onCreate, thay thế đoạn setOnApplyWindowInsetsListener cũ bằng đoạn này:
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-
-            // Chỉ lấy Top và Bottom để chống tràn vào Status Bar và Navigation Bar
-            // Phần Left và Right chúng ta giữ nguyên (0) vì đã dùng Guideline 24dp trong XML
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
@@ -44,6 +42,7 @@ class LoginActivity : AppCompatActivity() {
         val tvError = findViewById<TextView>(R.id.tv_error)
         val tvRegister = findViewById<TextView>(R.id.tv_register)
         val tvForgotPassword = findViewById<TextView>(R.id.tv_forgot_pw)
+
         btnLogin.setOnClickListener {
             val email = etEmail.text.toString().trim()
             val password = etPassword.text.toString().trim()
@@ -55,15 +54,28 @@ class LoginActivity : AppCompatActivity() {
             }
 
             btnLogin.isEnabled = false
+            tvError.visibility = View.GONE // Ẩn lỗi cũ khi bắt đầu request mới
+
             lifecycleScope.launch {
                 try {
+                    // Sử dụng AuthRequest (phone truyền null vì login không cần phone)
                     val response = RetrofitClient.getApiService(this@LoginActivity)
-                        .login(AuthRequest(email, password))
+                        .login(AuthRequest(email = email, password = password))
 
                     if (response.isSuccessful && response.body() != null) {
                         val authResponse = response.body()!!
+
+                        // Lưu Token
                         TokenManager.saveToken(this@LoginActivity, authResponse.token)
-                        TokenManager.saveUser(this@LoginActivity, authResponse.email, authResponse.name)
+
+                        // Lưu thông tin User (Xử lý null an toàn cho name)
+                        TokenManager.saveUser(
+                            this@LoginActivity,
+                            authResponse.email,
+                            authResponse.name ?: "",
+                            authResponse.phone ?: ""
+                        )
+
                         startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                         finish()
                     } else {
@@ -71,23 +83,25 @@ class LoginActivity : AppCompatActivity() {
                         tvError.visibility = View.VISIBLE
                     }
                 } catch (e: Exception) {
-                    tvError.text = "Connection error :"+e.message;
+                    // nếu MainActivity bắt buộc phải có dữ liệu từ server.
+                    tvError.text = "Connection error: ${e.localizedMessage}"
                     tvError.visibility = View.VISIBLE
-                    // Allow offline access
-                     startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                    finish()
+
+                    // Code cho phép offline access:
+                    // startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                    // finish()
+                } finally {
+                    btnLogin.isEnabled = true
                 }
-                btnLogin.isEnabled = true
             }
         }
 
         tvRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
-        // Thiết lập điều hướng Quên mật khẩu
+
         tvForgotPassword.setOnClickListener {
-            val intent = Intent(this, ForgotPasswordActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }
     }
 }

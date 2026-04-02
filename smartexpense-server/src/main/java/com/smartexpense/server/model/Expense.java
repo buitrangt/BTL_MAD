@@ -7,38 +7,20 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "expenses")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Expense {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Double amount;
+    private String description; // Nội dung: "Ăn sáng", "Mua sắm"
+    private Double amount;      // Số tiền: 50000
+    private String category;    // Phân loại: "Food", "Transport"
+    private LocalDateTime date; // Ngày tiêu
 
-    @Column(nullable = false)
-    private String category;
-
-    @Column(name = "time_stamp", nullable = false)
-    private Long timeStamp;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user; // Gắn với User nào
 }

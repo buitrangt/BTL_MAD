@@ -23,6 +23,18 @@ public class User {
 
     private String name;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private String role = "USER";
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean locked = false;
+
+    private String phone;
+
+    private LocalDateTime passwordChangedAt;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 

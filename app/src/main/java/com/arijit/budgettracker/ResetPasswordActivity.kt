@@ -9,8 +9,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import com.arijit.budgettracker.api.ResetPasswordRequest
+import com.arijit.budgettracker.api.RetrofitClient
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 
 class ResetPasswordActivity : AppCompatActivity() {
 
@@ -68,12 +72,24 @@ class ResetPasswordActivity : AppCompatActivity() {
     }
 
     private fun performResetPassword(password: String) {
-        // Đây là nơi bạn sẽ gọi API Retrofit để gửi mật khẩu mới lên server
-//        Toast.makeText(this, "Đang cập nhật mật khẩu...", Toast.LENGTH_SHORT).show()
+        val email = intent.getStringExtra("EXTRA_EMAIL") ?: ""
 
-        // Sau khi thành công có thể quay lại Login
-        val intent = Intent(this, LoginActivity::class.java)
-        startActivity(intent)
-        // finish()
+        lifecycleScope.launch {
+            try {
+                val request = ResetPasswordRequest(email, password)
+                val response = RetrofitClient.getApiService(this@ResetPasswordActivity).resetPassword(request)
+
+                if (response.isSuccessful) {
+                    Toast.makeText(this@ResetPasswordActivity, "Đổi mật khẩu thành công!", Toast.LENGTH_LONG).show()
+                    val intent = Intent(this@ResetPasswordActivity, LoginActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                } else {
+                    Toast.makeText(this@ResetPasswordActivity, "Lỗi cập nhật mật khẩu", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@ResetPasswordActivity, "Lỗi kết nối", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }
