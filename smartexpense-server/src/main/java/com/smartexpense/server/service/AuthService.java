@@ -6,4 +6,8 @@ import com.smartexpense.server.dto.AuthResponse;
 public interface AuthService {
     AuthResponse register(AuthRequest request);
     AuthResponse login(AuthRequest request);
+    
+    void sendOtp(String email);
+    boolean verifyOtp(String email, String otp);
+    void resetPassword(String email, String newPassword);
 }

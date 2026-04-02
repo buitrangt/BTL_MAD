@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.RelativeLayout
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -27,6 +28,14 @@ class UserProfileActivity : AppCompatActivity() {
         val notification = findViewById<RelativeLayout>(R.id.itemNotification)
         val theme = findViewById<RelativeLayout>(R.id.itemTheme)
         val logout = findViewById< Button>(R.id.btnLogout)
+        val tvUserName = findViewById<TextView>(R.id.tvUserName)
+
+        val currentName = TokenManager.getName(this)
+        if (!currentName.isNullOrEmpty()) {
+            tvUserName.text = currentName
+        } else {
+            tvUserName.text = "Người dùng"
+        }
 
         // Cập nhật nút Logout để hiện Popup thay vì chuyển trang ngay
         logout.setOnClickListener {

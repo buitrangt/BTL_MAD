@@ -2,18 +2,19 @@ package com.smartexpense.server.service.impl;
 
 import com.smartexpense.server.dto.StatsResponse;
 import com.smartexpense.server.model.User;
-import com.smartexpense.server.repository.ExpenseRepository;
+import com.smartexpense.server.repository.TransactionRepository;
 import com.smartexpense.server.repository.UserRepository;
 import com.smartexpense.server.service.StatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class StatsServiceImpl implements StatsService {
-    private final ExpenseRepository expenseRepository;
+    private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
 
     @Override
@@ -68,13 +69,15 @@ public class StatsServiceImpl implements StatsService {
     }
 
     private StatsResponse buildStats(Long userId, long start, long end) {
-        var expenses = expenseRepository.findByUserIdAndTimeStampBetween(userId, start, end);
-        double total = expenses.stream().mapToDouble(e -> e.getAmount()).sum();
+        var transactions = transactionRepository.findByUserIdAndTimeStampBetween(userId, start, end);
+        BigDecimal total = transactions.stream()
+                .map(e -> e.getAmount())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Map<String, Double> categoryBreakdown = new LinkedHashMap<>();
-        var categoryResults = expenseRepository.sumByCategory(userId, start, end);
+        Map<String, BigDecimal> categoryBreakdown = new LinkedHashMap<>();
+        var categoryResults = transactionRepository.sumByCategory(userId, start, end);
         for (Object[] row : categoryResults) {
-            categoryBreakdown.put((String) row[0], (Double) row[1]);
+            categoryBreakdown.put((String) row[0], (BigDecimal) row[1]);
         }
 
         return StatsResponse.builder()

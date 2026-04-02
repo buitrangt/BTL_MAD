@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F7F8">
+
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:elevation="4dp">
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:contentDescription="Bot Avatar"
+            android:src="@drawable/ic_bot_avatar" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:text="Trợ lý FinBot"
+            android:textColor="#1A202C"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:contentDescription="More options"
+            android:src="@drawable/ic_more_vert" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvChat"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/bottom_input"
+        android:layout_below="@id/header"
+        android:padding="16dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical" />
+
+    <LinearLayout
+        android:id="@+id/bottom_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#FFFFFF"
+        android:orientation="vertical"
+        android:elevation="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:padding="12dp">
+
+            <ImageButton
+                android:id="@+id/btnAddFile"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="Add attachment"
+                android:src="@drawable/ic_add"
+                android:background="?attr/selectableItemBackgroundBorderless"/>
+
+            <EditText
+                android:id="@+id/etMessage"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_input_gray"
+                android:hint="Nhập tin nhắn..."
+                android:importantForAutofill="no"
+                android:inputType="textLongMessage|textNoSuggestions|textMultiLine"                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textSize="14sp" />
+
+            <ImageButton
+                android:id="@+id/btnSend"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:contentDescription="Send message"
+                android:background="@drawable/bg_circle_green"
+                android:src="@drawable/ic_send" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:background="#F9FAFB">
+            <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:contentDescription="Home" android:src="@drawable/ic_home" />
+            <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:contentDescription="History" android:src="@drawable/ic_history" />
+            <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:contentDescription="Statistics" android:src="@drawable/ic_bar_chart" />
+            <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:contentDescription="Profile" android:src="@drawable/ic_user" />
+        </LinearLayout>
+    </LinearLayout>
+
+</RelativeLayout>

@@ -10,7 +10,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import com.arijit.budgettracker.api.RetrofitClient
 import com.google.android.material.button.MaterialButton
+import kotlinx.coroutines.launch
 
 class ForgotPasswordActivity : AppCompatActivity() {
 
@@ -63,11 +66,22 @@ class ForgotPasswordActivity : AppCompatActivity() {
     }
 
     private fun sendVerificationCode(email: String) {
-        // Sau này bạn sẽ code Retrofit gọi API ở đây
-        Toast.makeText(this, "Đã gửi mã xác nhận đến: $email", Toast.LENGTH_LONG).show()
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.getApiService(this@ForgotPasswordActivity).forgotPassword(email)
+                if (response.isSuccessful) {
+                    Toast.makeText(this@ForgotPasswordActivity, "Mã đã gửi đến $email", Toast.LENGTH_SHORT).show()
 
-        // Sau khi gọi API thành công, thường sẽ chuyển sang màn hình ResetPassword
-         val intent = Intent(this, VerifyOtpActivity::class.java)
-         startActivity(intent)
+                    val intent = Intent(this@ForgotPasswordActivity, VerifyOtpActivity::class.java)
+                    intent.putExtra("EXTRA_EMAIL", email) // Gửi email đi
+                    startActivity(intent)
+                } else {
+                    val error = response.errorBody()?.string() ?: "Email không tồn tại"
+                    Toast.makeText(this@ForgotPasswordActivity, error, Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@ForgotPasswordActivity, "Lỗi kết nối: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }
