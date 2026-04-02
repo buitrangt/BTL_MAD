@@ -146,13 +146,16 @@
                 android:src="@android:drawable/ic_menu_search"
                 app:tint="#A8A8A8" />
 
-            <TextView
+            <EditText
+                android:id="@+id/etSearchTransaction"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
                 android:layout_weight="1"
-                android:text="Search transactions..."
-                android:textColor="#B2B2B2"
+                android:background="@null"
+                android:hint="Tìm kiếm giao dịch..."
+                android:textColor="#222222"
+                android:textColorHint="#B2B2B2"
                 android:textSize="13sp" />
 
             <ImageView
@@ -183,15 +186,16 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Chi tiêu&#10;Tháng 9"
+                        android:text="Chi tiêu\nTháng này"
                         android:textColor="#FFFFFF"
                         android:textSize="12sp" />
 
                     <TextView
+                        android:id="@+id/tvMonthExpense"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="€2,450.50"
+                        android:text="0 đ"
                         android:textColor="#FFFFFF"
                         android:textSize="24sp"
                         android:textStyle="bold" />
@@ -208,15 +212,16 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Thu nhập&#10;Tháng 9"
+                        android:text="Thu nhập\nTháng này"
                         android:textColor="#8D8D8D"
                         android:textSize="12sp" />
 
                     <TextView
+                        android:id="@+id/tvMonthIncome"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="€3,200.00"
+                        android:text="0 đ"
                         android:textColor="#222222"
                         android:textSize="24sp"
                         android:textStyle="bold" />
@@ -233,15 +238,16 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Tiết kiệm&#10;Tháng 9"
+                        android:text="Tiết kiệm\nTháng này"
                         android:textColor="#8D8D8D"
                         android:textSize="12sp" />
 
                     <TextView
+                        android:id="@+id/tvMonthSavings"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="€749"
+                        android:text="0 đ"
                         android:textColor="#18C58F"
                         android:textSize="24sp"
                         android:textStyle="bold" />

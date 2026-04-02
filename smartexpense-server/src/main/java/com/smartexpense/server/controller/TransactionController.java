@@ -28,10 +28,22 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.createTransaction(auth.getName(), request));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<TransactionResponse> updateTransaction(
+            Authentication auth, @PathVariable Long id, @Valid @RequestBody TransactionRequest request) {
+        return ResponseEntity.ok(transactionService.updateTransaction(auth.getName(), id, request));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTransaction(Authentication auth, @PathVariable Long id) {
         transactionService.deleteTransaction(auth.getName(), id);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<TransactionResponse>> searchTransactions(
+            Authentication auth, @RequestParam String keyword) {
+        return ResponseEntity.ok(transactionService.searchTransactions(auth.getName(), keyword));
     }
 
     @PostMapping("/sync")

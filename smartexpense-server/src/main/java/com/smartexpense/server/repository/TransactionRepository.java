@@ -22,4 +22,10 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
         @Param("startTime") Long startTime,
         @Param("endTime") Long endTime
     );
+
+    @Query("SELECT t FROM Transaction t WHERE t.user.id = :userId AND (LOWER(t.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(t.category.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) ORDER BY t.timeStamp DESC")
+    List<Transaction> searchByNameOrCategory(
+        @Param("userId") Long userId,
+        @Param("keyword") String keyword
+    );
 }

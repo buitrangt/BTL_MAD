@@ -7,7 +7,8 @@ import retrofit2.http.*
 
 // DTOs
 data class ExpenseRequest(val amount: Double, val category: String, val timeStamp: Long)
-data class ExpenseResponse(val id: Long, val amount: Double, val category: String, val timeStamp: Long)
+data class ExpenseResponse(val id: Long, val amount: Double, val category: String, val type: String = "EXPENSE", val timeStamp: Long)
+data class TransactionResponse(val id: Long, val name: String, val amount: Double, val categoryId: Long?, val categoryName: String?, val type: String, val note: String?, val timeStamp: Long)
 data class StatsResponse(val totalAmount: Double, val categoryBreakdown: Map<String, Double>?)
 data class ResetPasswordRequest(val email: String, val newPassword: String)
 
@@ -19,12 +20,22 @@ interface ApiService {
     @POST("api/auth/login")
     suspend fun login(@Body request: AuthRequest): Response<AuthResponse>
 
+    // Transactions (includes type field)
+    @GET("api/transactions")
+    suspend fun getAllTransactions(): Response<List<TransactionResponse>>
+
+    @GET("api/transactions/search")
+    suspend fun searchTransactions(@Query("keyword") keyword: String): Response<List<TransactionResponse>>
+
     // Expenses
     @GET("api/expenses")
     suspend fun getAllExpenses(): Response<List<ExpenseResponse>>
 
     @POST("api/expenses")
     suspend fun createExpense(@Body request: ExpenseRequest): Response<ExpenseResponse>
+
+    @PUT("api/expenses/{id}")
+    suspend fun updateExpense(@Path("id") id: Long, @Body request: ExpenseRequest): Response<ExpenseResponse>
 
     @DELETE("api/expenses/{id}")
     suspend fun deleteExpense(@Path("id") id: Long): Response<Void>
