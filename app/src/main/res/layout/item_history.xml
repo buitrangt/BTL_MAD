@@ -5,70 +5,17 @@
     android:layout_height="88dp"
     android:layout_marginBottom="10dp">
 
-    <!-- Nền phía sau để sau này làm swipe edit/delete -->
+    <!-- Card -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="end"
-        android:orientation="horizontal">
-
-        <LinearLayout
-            android:layout_width="72dp"
-            android:layout_height="match_parent"
-            android:background="#E9EEF8"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@android:drawable/ic_menu_edit"
-                app:tint="#65748B" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Sửa"
-                android:textColor="#65748B"
-                android:textSize="12sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="72dp"
-            android:layout_height="match_parent"
-            android:background="#FF7C7C"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@android:drawable/ic_menu_delete"
-                app:tint="#FFFFFF" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Xóa"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- Card phía trước -->
-    <LinearLayout
-        android:id="@+id/foregroundCard"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@drawable/bg_transaction_card"
-        android:elevation="2dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="16dp"
         android:paddingEnd="16dp">
 
+        <!-- Left -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -94,6 +41,7 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
+        <!-- Right -->
         <TextView
             android:id="@+id/txtAmount"
             android:layout_width="wrap_content"
@@ -102,6 +50,7 @@
             android:textColor="#222222"
             android:textSize="16sp"
             android:textStyle="bold" />
+
     </LinearLayout>
 
 </FrameLayout>
