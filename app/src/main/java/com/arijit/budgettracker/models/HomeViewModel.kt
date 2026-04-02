@@ -17,12 +17,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val expenseDao = ExpenseDatabase.Companion.getDatabase(application).expenseDao()
     val latestExpenses: LiveData<List<Expense>> = expenseDao.getLatest8Expenses()
     val allExpenses: LiveData<List<Expense>> = expenseDao.getAllExpensesFlow().asLiveData()
+    
     private val _todayAmount = MutableLiveData<Double>()
     val todayAmount: LiveData<Double> = _todayAmount
     private val _weekAmount = MutableLiveData<Double>()
     val weekAmount: LiveData<Double> = _weekAmount
     private val _monthAmount = MutableLiveData<Double>()
     val monthAmount: LiveData<Double> = _monthAmount
+    
+    // Month summary: tính tất cả các giao dịch trong tháng (không phân loại income/expense)
+    private val _monthIncome = MutableLiveData<Double>()
+    val monthIncome: LiveData<Double> = _monthIncome
+    private val _monthExpense = MutableLiveData<Double>()
+    val monthExpense: LiveData<Double> = _monthExpense
+    private val _monthSavings = MutableLiveData<Double>()
+    val monthSavings: LiveData<Double> = _monthSavings
 
     init {
         viewModelScope.launch {
@@ -32,9 +41,25 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 val startOfWeek = getStartOfWeek(now)
                 val startOfMonth = getStartOfMonth(now)
 
-                _todayAmount.value = expenses.filter { it.timeStamp >= startOfDay }.sumOf { it.amount }
-                _weekAmount.value = expenses.filter { it.timeStamp >= startOfWeek }.sumOf { it.amount }
-                _monthAmount.value = expenses.filter { it.timeStamp >= startOfMonth }.sumOf { it.amount }
+                // Note: timeStamp in DB is in SECONDS, need to convert to milliseconds
+                _todayAmount.value = expenses.filter { (it.timeStamp * 1000) >= startOfDay }.sumOf { it.amount }
+                _weekAmount.value = expenses.filter { (it.timeStamp * 1000) >= startOfWeek }.sumOf { it.amount }
+                _monthAmount.value = expenses.filter { (it.timeStamp * 1000) >= startOfMonth }.sumOf { it.amount }
+                
+                // Tính chi tiêu tháng (chỉ EXPENSE)
+                val monthlyExpenseAmount = expenses
+                    .filter { (it.timeStamp * 1000) >= startOfMonth && it.type == "EXPENSE" }
+                    .sumOf { it.amount }
+                _monthExpense.value = monthlyExpenseAmount
+                
+                // Tính thu nhập tháng (chỉ INCOME)
+                val monthlyIncomeAmount = expenses
+                    .filter { (it.timeStamp * 1000) >= startOfMonth && it.type == "INCOME" }
+                    .sumOf { it.amount }
+                _monthIncome.value = monthlyIncomeAmount
+                
+                // Tiết kiệm = Thu nhập - Chi tiêu
+                _monthSavings.value = monthlyIncomeAmount - monthlyExpenseAmount
             }
         }
     }
@@ -78,6 +103,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteExpense(expense: Expense) {
         viewModelScope.launch {
             expenseDao.deleteExpense(expense)
+        }
+    }
+
+    fun updateExpense(expense: Expense) {
+        viewModelScope.launch {
+            expenseDao.updateExpense(expense)
         }
     }
 }

@@ -1,56 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="88dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
     android:layout_marginBottom="10dp">
 
     <!-- Card -->
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/bg_transaction_card"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp">
+        android:layout_height="wrap_content">
 
-        <!-- Left -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:background="@drawable/bg_transaction_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:minHeight="88dp">
 
-            <TextView
-                android:id="@+id/txtTitle"
+            <!-- Left Content -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Xem phim"
+                    android:textColor="#222222"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtCategoryTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Giải trí • 10:30 AM"
+                    android:textColor="#9B9B9B"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Right Content -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Xem phim"
-                android:textColor="#222222"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:orientation="vertical"
+                android:gravity="end">
 
-            <TextView
-                android:id="@+id/txtCategoryTime"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Giải trí • 10:30 AM"
-                android:textColor="#9B9B9B"
-                android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/txtAmount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="-12.50đ"
+                    android:textColor="#222222"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="end" />
+
+                <!-- Action Buttons Container -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <Button
+                        android:id="@+id/btnEdit"
+                        android:layout_width="56dp"
+                        android:layout_height="36dp"
+                        android:text="Sửa"
+                        android:textSize="11sp"
+                        android:layout_marginEnd="8dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+                    <Button
+                        android:id="@+id/btnDelete"
+                        android:layout_width="56dp"
+                        android:layout_height="36dp"
+                        android:text="Xóa"
+                        android:textSize="11sp"
+                        android:backgroundTint="#FF6B6B"
+                        style="@style/Widget.MaterialComponents.Button" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
+    </FrameLayout>
 
-        <!-- Right -->
-        <TextView
-            android:id="@+id/txtAmount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="- €12.50"
-            android:textColor="#222222"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-    </LinearLayout>
-
-</FrameLayout>
+</LinearLayout>

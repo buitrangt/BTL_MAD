@@ -87,7 +87,7 @@ class AddExpenseActivity : AppCompatActivity() {
                     val db = ExpenseDatabase.getDatabase(applicationContext)
                     val dao = db.expenseDao()
                     val expense =
-                        Expense(amount = finalExpenseAmt.toDouble(), category = catgSelected)
+                        Expense(amount = finalExpenseAmt.toDouble(), name = catgSelected, category = catgSelected)
                     dao.insertExpense(expense)
                     SyncManager.syncIfOnline(applicationContext)
                     finish()

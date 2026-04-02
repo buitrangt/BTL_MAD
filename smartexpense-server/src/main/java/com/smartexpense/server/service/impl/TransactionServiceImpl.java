@@ -50,6 +50,26 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    public TransactionResponse updateTransaction(String userEmail, Long transactionId, TransactionRequest request) {
+        User user = findUser(userEmail);
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+        if (!transaction.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Unauthorized");
+        }
+        transaction.setName(request.getName());
+        transaction.setAmount(request.getAmount());
+        transaction.setType(request.getType());
+        transaction.setNote(request.getNote());
+        transaction.setTimeStamp(request.getTimeStamp());
+        if (request.getCategoryId() != null) {
+            Category category = findCategory(request.getCategoryId());
+            transaction.setCategory(category);
+        }
+        return toResponse(transactionRepository.save(transaction));
+    }
+
+    @Override
     public void deleteTransaction(String userEmail, Long transactionId) {
         User user = findUser(userEmail);
         Transaction transaction = transactionRepository.findById(transactionId)
@@ -79,6 +99,15 @@ public class TransactionServiceImpl implements TransactionService {
             responses.add(toResponse(transactionRepository.save(transaction)));
         }
         return responses;
+    }
+
+    @Override
+    public List<TransactionResponse> searchTransactions(String userEmail, String keyword) {
+        User user = findUser(userEmail);
+        return transactionRepository.searchByNameOrCategory(user.getId(), keyword)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     private User findUser(String email) {
