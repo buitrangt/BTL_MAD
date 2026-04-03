@@ -99,6 +99,37 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         return cal.timeInMillis
     }
 
+    // Monthly stats for any given month
+    fun getMonthlyStats(monthStart: Long): Triple<Double, Double, Double> {
+        val monthEnd = getEndOfMonth(monthStart)
+        val expenses = allExpenses.value ?: emptyList()
+        
+        val income = expenses
+            .filter { (it.timeStamp * 1000) >= monthStart && (it.timeStamp * 1000) <= monthEnd && it.type == "INCOME" }
+            .sumOf { it.amount }
+        
+        val expense = expenses
+            .filter { (it.timeStamp * 1000) >= monthStart && (it.timeStamp * 1000) <= monthEnd && it.type == "EXPENSE" }
+            .sumOf { it.amount }
+        
+        val savings = income - expense
+        return Triple(income, expense, savings)
+    }
+
+    private fun getEndOfMonth(monthStart: Long): Long {
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = monthStart
+            add(Calendar.MONTH, 1)
+            set(Calendar.DAY_OF_MONTH, 1)
+            add(Calendar.DAY_OF_MONTH, -1)
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
+            set(Calendar.MILLISECOND, 999)
+        }
+        return cal.timeInMillis
+    }
+
 
     fun deleteExpense(expense: Expense) {
         viewModelScope.launch {
