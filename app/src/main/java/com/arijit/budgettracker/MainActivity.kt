@@ -56,44 +56,6 @@ class MainActivity : BaseActivity() {
             tab.setIcon(tabIcons[position])
         }.attach()
 
-        // === FAKE DATA: Xoá block này sau khi test xong ===
-        val prefs = getSharedPreferences("fake_data_prefs", MODE_PRIVATE)
-        if (!prefs.getBoolean("fake_data_inserted", false)) {
-            lifecycleScope.launch {
-                val dao = ExpenseDatabase.getDatabase(applicationContext).expenseDao()
-                val categories = listOf("Transport", "Entertainment", "Food", "Housing", "Pet", "Health", "Shopping", "Miscellaneous")
-                val amounts = listOf(
-                    listOf(50.0, 30.0, 120.0),       // Day 0 (6 days ago)
-                    listOf(80.0, 45.0),                // Day 1
-                    listOf(200.0, 60.0, 35.0, 90.0),  // Day 2
-                    listOf(15.0, 150.0),               // Day 3
-                    listOf(70.0, 25.0, 110.0),         // Day 4
-                    listOf(40.0, 180.0, 55.0),         // Day 5 (yesterday)
-                    listOf(95.0, 65.0, 130.0, 20.0)    // Day 6 (today)
-                )
-                for (dayOffset in 0..6) {
-                    val cal = Calendar.getInstance()
-                    cal.add(Calendar.DAY_OF_YEAR, -(6 - dayOffset))
-                    cal.set(Calendar.HOUR_OF_DAY, 10)
-                    val dayAmounts = amounts[dayOffset]
-                    for ((i, amount) in dayAmounts.withIndex()) {
-                        val category = categories[((dayOffset * 3) + i) % categories.size]
-                        dao.insertExpense(
-                            Expense(
-                                amount = amount,
-                                name = category,
-                                category = category,
-                                type = "EXPENSE",
-                                timeStamp = (cal.timeInMillis + (i * 3600000L)) / 1000
-                            )
-                        )
-                    }
-                }
-                prefs.edit().putBoolean("fake_data_inserted", true).apply()
-            }
-        }
-        // === END FAKE DATA ===
-
         // Sync unsynced expenses when app opens
         lifecycleScope.launch {
             SyncManager.syncIfOnline(applicationContext)

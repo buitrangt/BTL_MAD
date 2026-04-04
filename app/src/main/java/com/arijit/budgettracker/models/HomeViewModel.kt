@@ -11,6 +11,7 @@ import com.arijit.budgettracker.db.ExpenseDatabase
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.TimeZone
 import kotlin.math.exp
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
@@ -65,7 +66,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun getStartOfDay(now: Long): Long {
-        val cal = Calendar.getInstance().apply {
+        val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok")).apply {
             timeInMillis = now
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
@@ -76,9 +77,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun getStartOfWeek(now: Long): Long {
-        val cal = Calendar.getInstance().apply {
+        val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok")).apply {
             timeInMillis = now
-            set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+            firstDayOfWeek = Calendar.MONDAY
+            // Get day of week (1=Sunday, 2=Monday, ..., 7=Saturday)
+            val dayOfWeek = get(Calendar.DAY_OF_WEEK)
+            // Calculate days to subtract to get to Monday
+            // If Monday (2): 0 days, If Sunday (1): 6 days back, etc.
+            val daysToSubtract = (dayOfWeek + 5) % 7
+            add(Calendar.DAY_OF_MONTH, -daysToSubtract)
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
@@ -88,7 +95,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun getStartOfMonth(now: Long): Long {
-        val cal = Calendar.getInstance().apply {
+        val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok")).apply {
             timeInMillis = now
             set(Calendar.DAY_OF_MONTH, 1)
             set(Calendar.HOUR_OF_DAY, 0)

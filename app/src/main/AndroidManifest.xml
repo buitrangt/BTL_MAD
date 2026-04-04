@@ -44,7 +44,7 @@
             android:name=".AddTransActivity"
             android:exported="false" />
         <activity
-            android:name=".FinChatActivity"
+            android:name=".AddCategoryActivity"
             android:exported="false" />
         <activity
             android:name=".VerifyOtpActivity"
@@ -60,6 +60,9 @@
             android:exported="false" />
         <activity
             android:name=".UserProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".FinChatActivity"
             android:exported="false" />
 
         <provider

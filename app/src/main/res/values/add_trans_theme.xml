@@ -2,7 +2,7 @@
 <resources>
 
     <!-- Base numpad key style -->
-    <style name="ExpenseTracker.NumpadKey">
+    <style name="ExpenseTracker.NumpadKey" parent="ExpenseTracker">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">match_parent</item>
         <item name="android:layout_weight">1</item>
@@ -16,7 +16,7 @@
     </style>
 
     <!-- Darker key style for backspace -->
-    <style name="ExpenseTracker.NumpadKeyDark">
+    <style name="ExpenseTracker.NumpadKeyDark" parent="ExpenseTracker">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">match_parent</item>
         <item name="android:layout_weight">1</item>

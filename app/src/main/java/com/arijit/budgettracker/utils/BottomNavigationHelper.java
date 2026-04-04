@@ -5,7 +5,7 @@ import android.view.View;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.arijit.budgettracker.R;
-import com.arijit.budgettracker.AddExpenseActivity; // Activity thêm chi tiêu của bạn
+import com.arijit.budgettracker.AddTransActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -38,7 +38,7 @@ public class BottomNavigationHelper {
         // 2. Xử lý nút cộng (+) ở giữa
         fabAdd.setOnClickListener(v -> {
             // Mở màn hình thêm mới
-            Intent intent = new Intent(activity, AddExpenseActivity.class);
+            Intent intent = new Intent(activity, AddTransActivity.class);
             activity.startActivity(intent);
         });
     }

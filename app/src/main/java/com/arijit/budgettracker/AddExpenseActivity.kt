@@ -1,34 +1,15 @@
 package com.arijit.budgettracker
 
+import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.cardview.widget.CardView
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.lifecycleScope
-import com.arijit.budgettracker.db.Expense
-import com.arijit.budgettracker.db.ExpenseDatabase
-import com.arijit.budgettracker.utils.SyncManager
-import com.arijit.budgettracker.utils.Vibration
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import kotlinx.coroutines.launch
 
+/**
+ * Deprecated: This activity is kept for backward compatibility only.
+ * All functionality has been moved to AddTransActivity.
+ * This class simply redirects to the new activity.
+ */
 class AddExpenseActivity : AppCompatActivity() {
-    private lateinit var cancelBtn: ImageView
-    private lateinit var tickBtn: ImageView
-    private lateinit var category: CardView
-    private lateinit var expenseAmount: EditText
-    private var catgSelected: String = ""
-    private var finalExpenseAmt: String = ""
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -95,59 +76,4 @@ class AddExpenseActivity : AppCompatActivity() {
             }
         }
     }
-
-    private fun setupKeypad() {
-        val one = findViewById<TextView>(R.id.btn_1)
-        val two = findViewById<TextView>(R.id.btn_2)
-        val three = findViewById<TextView>(R.id.btn_3)
-        val four = findViewById<TextView>(R.id.btn_4)
-        val five = findViewById<TextView>(R.id.btn_5)
-        val six = findViewById<TextView>(R.id.btn_6)
-        val seven = findViewById<TextView>(R.id.btn_7)
-        val eight = findViewById<TextView>(R.id.btn_8)
-        val nine = findViewById<TextView>(R.id.btn_9)
-        val zero = findViewById<TextView>(R.id.btn_0)
-        val backspace = findViewById<TextView>(R.id.btn_clear)
-        val dot = findViewById<TextView>(R.id.btn_dot)
-
-        expenseAmount.showSoftInputOnFocus = false
-        expenseAmount.isFocusable = false
-        expenseAmount.isFocusableInTouchMode = false
-
-        val numberClickListener = View.OnClickListener { v ->
-            Vibration.vibrate(this, 50)
-            val value = (v as TextView).text.toString()
-            val currentText = expenseAmount.text.toString()
-
-            if (value == ".") {
-                if (currentText.isEmpty()) return@OnClickListener
-                if (currentText.endsWith(".")) return@OnClickListener
-                if (currentText.contains(".")) return@OnClickListener
-            }
-
-            expenseAmount.append(value)
-        }
-
-        one.setOnClickListener(numberClickListener)
-        two.setOnClickListener(numberClickListener)
-        three.setOnClickListener(numberClickListener)
-        four.setOnClickListener(numberClickListener)
-        five.setOnClickListener(numberClickListener)
-        six.setOnClickListener(numberClickListener)
-        seven.setOnClickListener(numberClickListener)
-        eight.setOnClickListener(numberClickListener)
-        nine.setOnClickListener(numberClickListener)
-        zero.setOnClickListener(numberClickListener)
-        dot.setOnClickListener(numberClickListener)
-
-        backspace.setOnClickListener {
-            Vibration.vibrate(this, 50)
-            val text = expenseAmount.text.toString()
-            if (text.isNotEmpty()) {
-                expenseAmount.setText(text.dropLast(1))
-                expenseAmount.setSelection(expenseAmount.text.length)
-            }
-        }
-    }
-
 }

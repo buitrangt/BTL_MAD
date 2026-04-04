@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -126,6 +127,7 @@
 
         <!-- CHỌN DANH MỤC Badge -->
         <LinearLayout
+            android:id="@+id/catg_btn"
             android:layout_width="wrap_content"
             android:layout_height="48dp"
             android:orientation="horizontal"
@@ -147,6 +149,7 @@
                 android:layout_marginEnd="8dp" />
 
             <TextView
+                android:id="@+id/tvCategory"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="CHỌN DANH MỤC"
@@ -172,6 +175,15 @@
             android:gravity="center_vertical"
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₫"
+                android:textSize="42sp"
+                android:textColor="#1A1A1A"
+                android:fontFamily="sans-serif-light"
+                android:layout_marginEnd="8dp" />
 
             <TextView
                 android:id="@+id/tvAmount"
@@ -298,15 +310,21 @@
 
         </LinearLayout>
 
-        <!-- HÔM NAY footer -->
+        <!-- HÔM NAY footer (clickable for date picker) -->
         <LinearLayout
+            android:id="@+id/calendarFooter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:layout_gravity="center_horizontal"
             android:paddingTop="8dp"
-            android:paddingBottom="4dp">
+            android:paddingBottom="4dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?android:attr/selectableItemBackground">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -316,6 +334,7 @@
                 android:layout_marginEnd="6dp" />
 
             <TextView
+                android:id="@+id/tvDateFooter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="HÔM NAY"
