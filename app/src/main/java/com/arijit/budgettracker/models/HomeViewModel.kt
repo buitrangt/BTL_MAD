@@ -8,10 +8,8 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.db.ExpenseDatabase
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import java.util.Calendar
-import kotlin.math.exp
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val expenseDao = ExpenseDatabase.Companion.getDatabase(application).expenseDao()
@@ -32,9 +30,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 val startOfWeek = getStartOfWeek(now)
                 val startOfMonth = getStartOfMonth(now)
 
-                _todayAmount.value = expenses.filter { it.timeStamp >= startOfDay }.sumOf { it.amount }
-                _weekAmount.value = expenses.filter { it.timeStamp >= startOfWeek }.sumOf { it.amount }
-                _monthAmount.value = expenses.filter { it.timeStamp >= startOfMonth }.sumOf { it.amount }
+                val expensesOnly = expenses.filter { it.type == "EXPENSE" }
+                _todayAmount.value = expensesOnly.filter { it.timeStamp >= startOfDay }.sumOf { it.amount }
+                _weekAmount.value = expensesOnly.filter { it.timeStamp >= startOfWeek }.sumOf { it.amount }
+                _monthAmount.value = expensesOnly.filter { it.timeStamp >= startOfMonth }.sumOf { it.amount }
             }
         }
     }

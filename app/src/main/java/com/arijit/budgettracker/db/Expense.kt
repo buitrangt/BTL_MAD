@@ -9,5 +9,8 @@ data class Expense(
     val amount: Double,
     val category: String,
     val timeStamp: Long = System.currentTimeMillis(),
-    val synced: Boolean = false
+    val synced: Boolean = false,
+    val type: String = "EXPENSE",
+    val name: String? = null,
+    val source: String = "MANUAL"
 )

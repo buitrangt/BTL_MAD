@@ -1,18 +1,25 @@
 package com.arijit.budgettracker
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.db.ExpenseDatabase
+import com.arijit.budgettracker.sms.SmsNotificationHelper
 import com.arijit.budgettracker.utils.SyncManager
+import com.arijit.budgettracker.utils.TemplateSyncManager
 import com.arijit.budgettracker.utils.Vibration
 import com.arijit.budgettracker.utils.ViewPagerAdapter
 import com.google.android.material.tabs.TabLayout
@@ -20,17 +27,20 @@ import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
-class MainActivity : BaseActivity() {
+class MainActivity : AppCompatActivity() {
     private lateinit var viewPager: ViewPager2
     private lateinit var adapter: ViewPagerAdapter
     private lateinit var headerTxt: TextView
     private lateinit var settings: ImageView
 
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-        setupChatFab()
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -97,6 +107,17 @@ class MainActivity : BaseActivity() {
             SyncManager.syncIfOnline(applicationContext)
         }
 
+        // Create notification channel for SMS transactions
+        SmsNotificationHelper.createChannel(this)
+
+        // Request SMS + notification permissions
+        requestSmsPermissions()
+
+        // Sync SMS templates from server
+        lifecycleScope.launch {
+            TemplateSyncManager.syncTemplates(applicationContext)
+        }
+
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 headerTxt.animate()
@@ -119,5 +140,30 @@ class MainActivity : BaseActivity() {
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {}
         })
+
+        // Handle notification tap -> open History tab
+        val openTab = intent.getIntExtra("OPEN_TAB", 0)
+        if (openTab in 0..2) {
+            viewPager.currentItem = openTab
+        }
+    }
+
+    private fun requestSmsPermissions() {
+        val permissions = mutableListOf<String>()
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS)
+            != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.RECEIVE_SMS)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        if (permissions.isNotEmpty()) {
+            permissionLauncher.launch(permissions.toTypedArray())
+        }
     }
 }

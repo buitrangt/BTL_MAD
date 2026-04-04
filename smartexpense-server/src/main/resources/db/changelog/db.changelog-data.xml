@@ -650,4 +650,32 @@
         </insert>
     </changeSet>
 
+    <!-- CREDIT templates for Vietnamese banks -->
+    <changeSet id="014-add-credit-sms-templates" author="smartexpense">
+        <insert tableName="sms_templates">
+            <column name="sender_pattern" value="Vietcombank"/>
+            <column name="amount_regex" value="GD: \+(\d[\d,.]+)VND"/>
+            <column name="type" value="CREDIT"/>
+            <column name="bank_name" value="Vietcombank"/>
+        </insert>
+        <insert tableName="sms_templates">
+            <column name="sender_pattern" value="BIDV"/>
+            <column name="amount_regex" value="GD: \+(\d[\d,.]+)VND"/>
+            <column name="type" value="CREDIT"/>
+            <column name="bank_name" value="BIDV"/>
+        </insert>
+        <insert tableName="sms_templates">
+            <column name="sender_pattern" value="Techcombank"/>
+            <column name="amount_regex" value="GD: \+(\d[\d,.]+)VND"/>
+            <column name="type" value="CREDIT"/>
+            <column name="bank_name" value="Techcombank"/>
+        </insert>
+        <insert tableName="sms_templates">
+            <column name="sender_pattern" value="MOMO"/>
+            <column name="amount_regex" value="nhan (\d[\d,.]+)d"/>
+            <column name="type" value="CREDIT"/>
+            <column name="bank_name" value="MoMo"/>
+        </insert>
+    </changeSet>
+
 </databaseChangeLog>

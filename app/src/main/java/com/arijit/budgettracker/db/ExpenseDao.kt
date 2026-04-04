@@ -12,10 +12,13 @@ interface ExpenseDao {
     @Insert
     suspend fun insertExpense(expense: Expense)
 
-    @Query("SELECT * FROM expenses ORDER BY timestamp DESC")
+    @Insert
+    suspend fun insertExpenseAndGetId(expense: Expense): Long
+
+    @Query("SELECT * FROM expenses ORDER BY timeStamp DESC")
     fun getAllExpensesFlow(): Flow<List<Expense>>
 
-    @Query("SELECT * FROM expenses ORDER BY timestamp DESC limit 8")
+    @Query("SELECT * FROM expenses ORDER BY timeStamp DESC limit 8")
     fun getLatest8Expenses(): LiveData<List<Expense>>
 
     @Delete
