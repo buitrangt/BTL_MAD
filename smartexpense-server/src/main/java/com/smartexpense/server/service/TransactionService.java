@@ -9,4 +9,5 @@ public interface TransactionService {
     TransactionResponse createTransaction(String userEmail, TransactionRequest request);
     void deleteTransaction(String userEmail, Long transactionId);
     List<TransactionResponse> syncTransactions(String userEmail, List<TransactionRequest> requests);
+    List<TransactionResponse> searchTransactions(String userEmail, String keyword);
 }

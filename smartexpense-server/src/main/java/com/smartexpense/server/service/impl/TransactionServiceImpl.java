@@ -91,6 +91,18 @@ public class TransactionServiceImpl implements TransactionService {
         return categoryRepository.findById(categoryId).orElse(null);
     }
 
+    @Override
+    public List<TransactionResponse> searchTransactions(String userEmail, String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getAllTransactions(userEmail);
+        }
+        User user = findUser(userEmail);
+        return transactionRepository.searchByKeyword(user.getId(), keyword.trim())
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
     private TransactionResponse toResponse(Transaction transaction) {
         return TransactionResponse.builder()
                 .id(transaction.getId())
