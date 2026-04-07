@@ -39,8 +39,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             expenseDao.getAllExpensesFlow().collect { expenses ->
                 val now = System.currentTimeMillis()
                 val startOfDay = getStartOfDay(now)
+                val endOfDay = startOfDay + (24 * 60 * 60 * 1000) // +1 day
                 val startOfWeek = getStartOfWeek(now)
+                val endOfWeek = startOfWeek + (7 * 24 * 60 * 60 * 1000) // +7 days
                 val startOfMonth = getStartOfMonth(now)
+                
+                // Calculate end of month (start of next month)
+                val nextMonthCal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok")).apply {
+                    timeInMillis = startOfMonth
+                    add(Calendar.MONTH, 1)
+                }
+                val endOfMonth = nextMonthCal.timeInMillis
 
                 // Note: timeStamp in DB is in SECONDS, need to convert to milliseconds
                 _todayAmount.value = expenses.filter { (it.timeStamp * 1000) >= startOfDay }.sumOf { it.amount }
@@ -66,13 +75,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun getStartOfDay(now: Long): Long {
-        val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok")).apply {
+        val bangkok = TimeZone.getTimeZone("Asia/Bangkok")
+        val cal = Calendar.getInstance(bangkok).apply {
             timeInMillis = now
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
+        // Convert to milliseconds from epoch (accounts for timezone offset)
         return cal.timeInMillis
     }
 

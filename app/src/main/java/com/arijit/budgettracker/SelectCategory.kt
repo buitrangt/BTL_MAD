@@ -1,5 +1,6 @@
 package com.arijit.budgettracker
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
@@ -9,7 +10,9 @@ import android.widget.EditText
 import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -31,6 +34,8 @@ class SelectCategory : AppCompatActivity() {
     private lateinit var ivSearch: ImageView
     private var transactionType: String = "expense"
     private var allCategories: List<com.arijit.budgettracker.db.Category> = emptyList()
+    private var currentCategory: String = ""
+    private var editingCategoryOldName: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +48,7 @@ class SelectCategory : AppCompatActivity() {
         }
 
         transactionType = intent.getStringExtra("type") ?: "expense"
+        currentCategory = intent.getStringExtra("currentCategory") ?: ""
 
         initViews()
         setupClickListeners()
@@ -60,6 +66,11 @@ class SelectCategory : AppCompatActivity() {
     private fun setupClickListeners() {
         btnBack.setOnClickListener {
             Vibration.vibrate(this, 50)
+            if (currentCategory.isNotEmpty()) {
+                setResult(RESULT_OK, Intent().apply {
+                    putExtra("selectedCategory", currentCategory)
+                })
+            }
             finish()
         }
 
@@ -101,17 +112,16 @@ class SelectCategory : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == ADD_CATEGORY_REQUEST_CODE && resultCode == RESULT_OK) {
-            val newCategory = data?.getStringExtra("selectedCategory") ?: ""
-            // If category was selected, return it
-            if (newCategory.isNotEmpty()) {
-                setResult(RESULT_OK, Intent().apply {
-                    putExtra("selectedCategory", newCategory)
-                })
-                finish()
-            } else {
-                // If no category was selected, just reload the list
-                loadCategories()
+            val updatedCategory = data?.getStringExtra("selectedCategory")?.trim().orEmpty()
+
+            // If the currently selected category was renamed, keep AddTrans in sync.
+            if (updatedCategory.isNotEmpty() && currentCategory == editingCategoryOldName) {
+                currentCategory = updatedCategory
             }
+            editingCategoryOldName = ""
+
+            // After add/edit category, keep user on category list screen and reload data.
+            loadCategories()
         }
     }
 
@@ -120,7 +130,7 @@ class SelectCategory : AppCompatActivity() {
             try {
                 val db = ExpenseDatabase.getDatabase(applicationContext)
                 val categoryDao = db.categoryDao()
-                allCategories = categoryDao.getCategoriesByType(transactionType)
+                allCategories = categoryDao.getCategoriesByType()
                 displayCategories(allCategories)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -151,14 +161,6 @@ class SelectCategory : AppCompatActivity() {
                     setMargins(8, 8, 8, 8)
                 }
                 categoryGrid.addView(categoryCard, params)
-
-                categoryCard.setOnClickListener {
-                    Vibration.vibrate(this@SelectCategory, 50)
-                    setResult(RESULT_OK, Intent().apply {
-                        putExtra("selectedCategory", category.name)
-                    })
-                    finish()
-                }
             }
         }
     }
@@ -194,6 +196,87 @@ class SelectCategory : AppCompatActivity() {
             card.addView(textViewDesc)
         }
 
+        card.setOnClickListener {
+            Vibration.vibrate(this@SelectCategory, 50)
+            currentCategory = category.name
+            setResult(RESULT_OK, Intent().apply {
+                putExtra("selectedCategory", category.name)
+            })
+            finish()
+        }
+
+        card.setOnLongClickListener {
+            showCategoryPopupMenu(card, category)
+            true
+        }
+
         return card
+    }
+
+    private fun showCategoryPopupMenu(view: android.view.View, category: com.arijit.budgettracker.db.Category) {
+        val popup = PopupMenu(this, view)
+        popup.menuInflater.inflate(R.menu.menu_category_action, popup.menu)
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_edit_category -> {
+                    editingCategoryOldName = category.name
+                    val intent = Intent(this, AddCategoryActivity::class.java)
+                    intent.putExtra("categoryId", category.id)
+                    intent.putExtra("categoryName", category.name)
+                    intent.putExtra("categoryDescription", category.description)
+                    intent.putExtra("type", transactionType)
+                    startActivityForResult(intent, ADD_CATEGORY_REQUEST_CODE)
+                    true
+                }
+                R.id.action_delete_category -> {
+                    showDeleteCategoryConfirmDialog(category)
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun showDeleteCategoryConfirmDialog(category: com.arijit.budgettracker.db.Category) {
+        AlertDialog.Builder(this)
+            .setTitle("Xóa danh mục")
+            .setMessage("Bạn có chắc muốn xóa danh mục \"${category.name}\" này?")
+            .setPositiveButton("Xóa") { _, _ ->
+                deleteCategory(category)
+            }
+            .setNegativeButton("Hủy", null)
+            .show()
+    }
+
+    private fun deleteCategory(category: com.arijit.budgettracker.db.Category) {
+        lifecycleScope.launch {
+            try {
+                val db = ExpenseDatabase.getDatabase(applicationContext)
+                val categoryDao = db.categoryDao()
+                val expenseDao = db.expenseDao()
+                
+                // Check if there are any expenses using this category
+                val expenseCount = expenseDao.getExpenseCountByCategory(category.name)
+                
+                if (expenseCount > 0) {
+                    // Cannot delete - show warning
+                    AlertDialog.Builder(this@SelectCategory)
+                        .setTitle("Không thể xóa")
+                        .setMessage("Danh mục \"${category.name}\" đang được sử dụng bởi $expenseCount giao dịch.\n\nVui lòng xóa hoặc sửa các giao dịch này trước khi xóa danh mục.")
+                        .setPositiveButton("OK", null)
+                        .show()
+                } else {
+                    // Safe to delete
+                    categoryDao.deleteCategory(category)
+                    Toast.makeText(this@SelectCategory, "Danh mục đã được xóa", Toast.LENGTH_SHORT).show()
+                    // Reload categories
+                    loadCategories()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(this@SelectCategory, "Lỗi: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

@@ -61,7 +61,7 @@ class ExpenseAdapter(
             }
 
             itemView.setOnLongClickListener {
-                onItemLongClick?.invoke(expense)
+                showPopupMenu(itemView, expense)
                 true
             }
 

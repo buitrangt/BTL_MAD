@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -12,7 +13,9 @@ import com.arijit.budgettracker.R
 import com.arijit.budgettracker.db.Expense
 
 class HomeRecentAdapter(
-    var onItemLongClick: ((Expense) -> Unit)? = null
+    var onItemLongClick: ((Expense) -> Unit)? = null,
+    var onEditClick: ((Expense) -> Unit)? = null,
+    var onDeleteClick: ((Expense) -> Unit)? = null
 ) : ListAdapter<Expense, HomeRecentAdapter.HomeRecentViewHolder>(DIFF_CALLBACK) {
 
     companion object {
@@ -39,20 +42,43 @@ class HomeRecentAdapter(
             tvDate.text = formatDate(expense.timeStamp)
 
             itemView.setOnLongClickListener {
-                onItemLongClick?.invoke(expense)
+                showPopupMenu(itemView, expense)
                 true
             }
         }
 
+        private fun showPopupMenu(view: View, expense: Expense) {
+            val popup = PopupMenu(view.context, view)
+            popup.menuInflater.inflate(R.menu.menu_expense_action, popup.menu)
+            popup.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.action_edit -> {
+                        onEditClick?.invoke(expense)
+                        true
+                    }
+                    R.id.action_delete -> {
+                        onDeleteClick?.invoke(expense)
+                        true
+                    }
+                    else -> false
+                }
+            }
+            popup.show()
+        }
+
         private fun formatDate(timeStamp: Long): String {
-            val calendar = java.util.Calendar.getInstance()
+            val bangkok = java.util.TimeZone.getTimeZone("Asia/Bangkok")
+            val calendar = java.util.Calendar.getInstance(bangkok)
             calendar.timeInMillis = timeStamp
-            val today = java.util.Calendar.getInstance()
-            val yesterday = java.util.Calendar.getInstance().apply { add(java.util.Calendar.DAY_OF_YEAR, -1) }
+            
+            val today = java.util.Calendar.getInstance(bangkok)
+            val yesterday = java.util.Calendar.getInstance(bangkok).apply { add(java.util.Calendar.DAY_OF_YEAR, -1) }
             
             return when {
-                calendar.get(java.util.Calendar.DAY_OF_YEAR) == today.get(java.util.Calendar.DAY_OF_YEAR) -> "Hôm nay"
-                calendar.get(java.util.Calendar.DAY_OF_YEAR) == yesterday.get(java.util.Calendar.DAY_OF_YEAR) -> "Hôm qua"
+                calendar.get(java.util.Calendar.DAY_OF_YEAR) == today.get(java.util.Calendar.DAY_OF_YEAR) &&
+                calendar.get(java.util.Calendar.YEAR) == today.get(java.util.Calendar.YEAR) -> "Hôm nay"
+                calendar.get(java.util.Calendar.DAY_OF_YEAR) == yesterday.get(java.util.Calendar.DAY_OF_YEAR) &&
+                calendar.get(java.util.Calendar.YEAR) == yesterday.get(java.util.Calendar.YEAR) -> "Hôm qua"
                 else -> "${calendar.get(java.util.Calendar.DAY_OF_MONTH)}/${calendar.get(java.util.Calendar.MONTH) + 1}"
             }
         }

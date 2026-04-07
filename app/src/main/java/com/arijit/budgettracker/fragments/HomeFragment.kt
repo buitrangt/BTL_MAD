@@ -56,15 +56,19 @@ class HomeFragment : Fragment() {
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        adapter.onItemLongClick = { expense ->
-            AlertDialog.Builder(requireContext())
-                .setTitle("Xóa giao dịch")
-                .setMessage("Bạn có chắc muốn xóa giao dịch này?")
-                .setPositiveButton("Xóa") { _, _ ->
-                    viewModel.deleteExpense(expense)
-                }
-                .setNegativeButton("Hủy", null)
-                .show()
+        adapter.onDeleteClick = { expense ->
+            showDeleteConfirmDialog(expense)
+        }
+
+        adapter.onEditClick = { expense ->
+            val intent = Intent(requireContext(), AddTransActivity::class.java)
+            intent.putExtra("expenseId", expense.id)
+            intent.putExtra("type", expense.type)
+            intent.putExtra("category", expense.category)
+            intent.putExtra("amount", expense.amount)
+            intent.putExtra("note", expense.note)
+            intent.putExtra("timeStamp", expense.timeStamp)
+            startActivity(intent)
         }
 
         viewModel = ViewModelProvider(this)[HomeViewModel::class.java]
@@ -90,10 +94,21 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // Refresh amounts and list to reflect currency changes
+
+        // Force refresh amounts display
         viewModel.todayAmount.value?.let { todayAmt.text = "₫%.2f".format(it) }
         viewModel.weekAmount.value?.let { thisWeekAmt.text = "₫%.2f".format(it) }
         viewModel.monthAmount.value?.let { thisMonthAmt.text = "₫%.2f".format(it) }
-        adapter.notifyDataSetChanged()
+    }
+
+    private fun showDeleteConfirmDialog(expense: com.arijit.budgettracker.db.Expense) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Xóa giao dịch")
+            .setMessage("Bạn có chắc muốn xóa giao dịch này?")
+            .setPositiveButton("Xóa") { _, _ ->
+                viewModel.deleteExpense(expense)
+            }
+            .setNegativeButton("Hủy", null)
+            .show()
     }
 }

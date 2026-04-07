@@ -21,7 +21,11 @@ class AddCategoryActivity : AppCompatActivity() {
     private lateinit var etCategoryDescription: EditText
     private lateinit var btnSaveCategory: LinearLayout
     private lateinit var btnBack: TextView
-    private var categoryType: String = "expense"
+    private var categoryType: String = "both"
+    
+    private var editingCategoryId: Int = 0 // 0 means new category
+    private var isEditMode: Boolean = false
+    private var oldCategoryName: String = "" // Store original name for updates
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,9 +37,29 @@ class AddCategoryActivity : AppCompatActivity() {
             insets
         }
 
-        categoryType = intent.getStringExtra("type") ?: "expense"
+        categoryType = "both"
+        
+        // Check if editing
+        if (intent.hasExtra("categoryId")) {
+            isEditMode = true
+            editingCategoryId = intent.getIntExtra("categoryId", 0)
+        }
 
         initViews()
+        
+        if (isEditMode) {
+            // Populate fields for editing
+            oldCategoryName = intent.getStringExtra("categoryName") ?: ""
+            etCategoryName.setText(oldCategoryName)
+            etCategoryDescription.setText(intent.getStringExtra("categoryDescription") ?: "")
+            
+            // Change button text - find TextView child in LinearLayout
+            val tvButtonLabel = (btnSaveCategory.getChildAt(0) as? TextView)
+            if (tvButtonLabel != null) {
+                tvButtonLabel.text = "Cập nhật danh mục"
+            }
+        }
+        
         setupClickListeners()
     }
 
@@ -59,11 +83,17 @@ class AddCategoryActivity : AppCompatActivity() {
     }
 
     private fun saveCategory() {
-        val categoryName = etCategoryName.text.toString().trim()
+        var categoryName = etCategoryName.text.toString().trim()
         val categoryDescription = etCategoryDescription.text.toString().trim()
 
         if (categoryName.isEmpty()) {
             Toast.makeText(this, "Vui lòng nhập tên danh mục", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // Validate category name format - no special chars
+        if (!categoryName.matches(Regex("^[a-zA-Zà-ỿ0-9 ]+$"))) {
+            Toast.makeText(this, "Tên danh mục chỉ được chứa chữ, số và khoảng trắng", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -71,21 +101,47 @@ class AddCategoryActivity : AppCompatActivity() {
             try {
                 val db = ExpenseDatabase.getDatabase(applicationContext)
                 val categoryDao = db.categoryDao()
+                val expenseDao = db.expenseDao()
                 
-                val newCategory = Category(
-                    name = categoryName,
-                    icon = "📁",  // Default icon
-                    type = categoryType,
-                    description = categoryDescription,
-                    createdAt = System.currentTimeMillis()
-                )
+                if (isEditMode) {
+                    // Check if category name changed
+                    val categoryNameChanged = (categoryName != oldCategoryName)
+                    
+                    // Update existing category
+                    val category = Category(
+                        id = editingCategoryId,
+                        name = categoryName,
+                        icon = "📁",
+                        type = categoryType,
+                        description = categoryDescription,
+                        createdAt = System.currentTimeMillis()
+                    )
+                    categoryDao.updateCategory(category)
+                    
+                    // If name changed, update all expenses with old category name
+                    if (categoryNameChanged) {
+                        expenseDao.updateExpenseCategoryName(oldCategoryName, categoryName)
+                        Toast.makeText(this@AddCategoryActivity, "Cập nhật danh mục và ${expenseDao.getExpenseCountByCategory(categoryName)} giao dịch", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this@AddCategoryActivity, "Cập nhật danh mục thành công", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    // Insert new category
+                    val newCategory = Category(
+                        name = categoryName,
+                        icon = "📁",
+                        type = categoryType,
+                        description = categoryDescription,
+                        createdAt = System.currentTimeMillis()
+                    )
+                    categoryDao.insertCategory(newCategory)
+                    Toast.makeText(this@AddCategoryActivity, "Danh mục đã được thêm", Toast.LENGTH_SHORT).show()
+                }
                 
-                categoryDao.insertCategory(newCategory)
-                
-                Toast.makeText(this@AddCategoryActivity, "Danh mục đã được thêm", Toast.LENGTH_SHORT).show()
-                
-                // Return to SelectCategory without selecting the new category
-                setResult(RESULT_OK)
+                // Return updated category name so caller can update their reference
+                setResult(RESULT_OK, Intent().apply {
+                    putExtra("selectedCategory", categoryName)
+                })
                 finish()
             } catch (e: Exception) {
                 Toast.makeText(this@AddCategoryActivity, "Lỗi khi lưu danh mục: ${e.message}", Toast.LENGTH_SHORT).show()

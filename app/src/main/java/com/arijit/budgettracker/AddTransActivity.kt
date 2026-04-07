@@ -38,6 +38,9 @@ class AddTransActivity : AppCompatActivity() {
     private var selectedNote: String = ""
     private var selectedAmount: String = ""
     private var selectedDate: Long = System.currentTimeMillis()
+    
+    private var editingExpenseId: Int = 0 // 0 means new expense
+    private var isEditMode: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,7 +52,21 @@ class AddTransActivity : AppCompatActivity() {
             insets
         }
 
+        // Check if editing
+        if (intent.hasExtra("expenseId")) {
+            isEditMode = true
+            editingExpenseId = intent.getIntExtra("expenseId", 0)
+            transactionType = intent.getStringExtra("type") ?: "expense"
+            selectedCategory = intent.getStringExtra("category") ?: ""
+            selectedAmount = intent.getDoubleExtra("amount", 0.0).toString()
+            selectedNote = intent.getStringExtra("note") ?: ""
+            selectedDate = intent.getLongExtra("timeStamp", System.currentTimeMillis())
+        }
+
         initViews()
+        if (isEditMode) {
+            updateConfirmButtonText()
+        }
         setupTypeSelection()
         setupCategorySelection()
         setupDatePicker()
@@ -65,6 +82,19 @@ class AddTransActivity : AppCompatActivity() {
         calendarFooter = findViewById(R.id.calendarFooter)
         amountDisplay = findViewById(R.id.tvAmount)
         noteInput = findViewById(R.id.etNote)
+        
+        // Populate fields if editing
+        if (isEditMode) {
+            updateTypeDisplay()
+            updateCategoryDisplay()
+            updateAmountDisplay()
+            updateDateDisplay()
+            noteInput.setText(selectedNote)
+        }
+    }
+
+    private fun updateConfirmButtonText() {
+        confirmBtn.text = "Cập nhật"
     }
 
     private fun setupTypeSelection() {
@@ -102,6 +132,7 @@ class AddTransActivity : AppCompatActivity() {
             Vibration.vibrate(this, 50)
             val intent = android.content.Intent(this, SelectCategory::class.java)
             intent.putExtra("type", transactionType)
+            intent.putExtra("currentCategory", selectedCategory)
             startActivityForResult(intent, CATEGORY_REQUEST_CODE)
         }
     }
@@ -109,14 +140,17 @@ class AddTransActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == CATEGORY_REQUEST_CODE && resultCode == RESULT_OK) {
-            selectedCategory = data?.getStringExtra("selectedCategory") ?: ""
-            updateCategoryDisplay()
+            val updatedCategory = data?.getStringExtra("selectedCategory")?.trim()
+            if (!updatedCategory.isNullOrEmpty()) {
+                selectedCategory = updatedCategory
+                updateCategoryDisplay()
+            }
         }
     }
 
     private fun updateCategoryDisplay() {
         val tvCategory = catgBtn.findViewById<TextView>(R.id.tvCategory)
-        tvCategory.text = if (selectedCategory.isEmpty()) "CHỌN DANH MỤC" else selectedCategory.uppercase()
+        tvCategory.text = if (selectedCategory.isEmpty()) "CHỌN DANH MỤC" else selectedCategory
     }
 
     private fun loadAndShowCategories() {
@@ -124,7 +158,7 @@ class AddTransActivity : AppCompatActivity() {
             try {
                 val db = ExpenseDatabase.getDatabase(applicationContext)
                 val categoryDao = db.categoryDao()
-                val categories = categoryDao.getCategoriesByType(transactionType)
+                val categories = categoryDao.getCategoriesByType()
                 
                 showCategoryBottomSheet(categories.map { it.name })
             } catch (e: Exception) {
@@ -172,13 +206,41 @@ class AddTransActivity : AppCompatActivity() {
     private fun setupDatePicker() {
         calendarFooter.setOnClickListener {
             Vibration.vibrate(this, 50)
+            
+            // Convert Bangkok timestamp to UTC for date picker selection
+            val bangkok = TimeZone.getTimeZone("Asia/Bangkok")
+            val bangkokCal = Calendar.getInstance(bangkok)
+            bangkokCal.timeInMillis = selectedDate
+            
+            val dayOfMonth = bangkokCal.get(Calendar.DAY_OF_MONTH)
+            val month = bangkokCal.get(Calendar.MONTH)
+            val year = bangkokCal.get(Calendar.YEAR)
+            
+            // Create UTC calendar for the same date
+            val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+            utcCal.set(year, month, dayOfMonth, 0, 0, 0)
+            utcCal.set(Calendar.MILLISECOND, 0)
+            val utcSelection = utcCal.timeInMillis
+            
             val datePicker = MaterialDatePicker.Builder.datePicker()
-                .setSelection(selectedDate)
+                .setSelection(utcSelection)
                 .setTitleText("Chọn ngày")
                 .build()
             
             datePicker.addOnPositiveButtonClickListener { selection ->
-                selectedDate = selection
+                // Convert UTC selection back to Bangkok midnight
+                val utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+                utcCal.timeInMillis = selection
+                
+                val dayOfMonth = utcCal.get(Calendar.DAY_OF_MONTH)
+                val month = utcCal.get(Calendar.MONTH)
+                val year = utcCal.get(Calendar.YEAR)
+                
+                val bangkokCal = Calendar.getInstance(bangkok)
+                bangkokCal.set(year, month, dayOfMonth, 0, 0, 0)
+                bangkokCal.set(Calendar.MILLISECOND, 0)
+                
+                selectedDate = bangkokCal.timeInMillis
                 updateDateDisplay()
             }
             
@@ -245,14 +307,31 @@ class AddTransActivity : AppCompatActivity() {
         lifecycleScope.launch {
             val db = ExpenseDatabase.getDatabase(applicationContext)
             val dao = db.expenseDao()
-            val expense = Expense(
-                amount = selectedAmount.toDoubleOrNull() ?: 0.0,
-                category = selectedCategory,
-                note = selectedNote,
-                type = transactionType,
-                timeStamp = selectedDate
-            )
-            dao.insertExpense(expense)
+            
+            if (isEditMode) {
+                // Update existing expense
+                val expense = Expense(
+                    id = editingExpenseId,
+                    amount = selectedAmount.toDoubleOrNull() ?: 0.0,
+                    category = selectedCategory.trim(),
+                    note = selectedNote,
+                    type = transactionType,
+                    timeStamp = selectedDate
+                )
+                dao.updateExpense(expense)
+                Toast.makeText(this@AddTransActivity, "Cập nhật thành công", Toast.LENGTH_SHORT).show()
+            } else {
+                // Insert new expense
+                val expense = Expense(
+                    amount = selectedAmount.toDoubleOrNull() ?: 0.0,
+                    category = selectedCategory.trim(),
+                    note = selectedNote,
+                    type = transactionType,
+                    timeStamp = selectedDate
+                )
+                dao.insertExpense(expense)
+            }
+            
             SyncManager.syncIfOnline(applicationContext)
             finish()
         }

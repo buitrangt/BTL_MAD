@@ -9,9 +9,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.arijit.budgettracker.R
+import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.models.DailyExpense
 
-class HistoryAdapter : ListAdapter<DailyExpense, HistoryAdapter.HistoryViewHolder>(DIFF_CALLBACK) {
+class HistoryAdapter(
+    var onExpenseEditClick: ((Expense) -> Unit)? = null,
+    var onExpenseDeleteClick: ((Expense) -> Unit)? = null
+) : ListAdapter<DailyExpense, HistoryAdapter.HistoryViewHolder>(DIFF_CALLBACK) {
 
     companion object {
         private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<DailyExpense>() {
