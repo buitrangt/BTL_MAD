@@ -18,9 +18,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.db.ExpenseDatabase
+import com.arijit.budgettracker.utils.TokenManager
 import com.arijit.budgettracker.utils.Vibration
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SelectCategory : AppCompatActivity() {
     companion object {
@@ -267,6 +271,7 @@ class SelectCategory : AppCompatActivity() {
                         .setPositiveButton("OK", null)
                         .show()
                 } else {
+                    syncDeleteCategoryToServer(category.name)
                     // Safe to delete
                     categoryDao.deleteCategory(category)
                     Toast.makeText(this@SelectCategory, "Danh mục đã được xóa", Toast.LENGTH_SHORT).show()
@@ -276,6 +281,26 @@ class SelectCategory : AppCompatActivity() {
             } catch (e: Exception) {
                 e.printStackTrace()
                 Toast.makeText(this@SelectCategory, "Lỗi: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private suspend fun syncDeleteCategoryToServer(categoryName: String) {
+        if (!TokenManager.isLoggedIn(applicationContext)) return
+
+        withContext(Dispatchers.IO) {
+            try {
+                val api = RetrofitClient.getApiService(applicationContext)
+                val categoriesRes = api.getAllCategories()
+                if (!categoriesRes.isSuccessful) return@withContext
+
+                val target = categoriesRes.body()
+                    ?.firstOrNull { it.name == categoryName && !it.isDefault }
+                    ?: return@withContext
+
+                api.deleteCategory(target.id)
+            } catch (_: Exception) {
+                // Keep local deletion behavior; server deletion can be retried.
             }
         }
     }

@@ -26,6 +26,8 @@ data class TransactionResponse(
 )
 data class StatsResponse(val totalAmount: Double, val categoryBreakdown: Map<String, Double>?)
 data class ResetPasswordRequest(val email: String, val newPassword: String)
+data class CategoryRequest(val name: String, val note: String?)
+data class CategoryResponse(val id: Long, val name: String, val note: String?, val isDefault: Boolean)
 
 interface ApiService {
     // Auth
@@ -57,6 +59,19 @@ interface ApiService {
 
     @POST("api/expenses/sync")
     suspend fun syncExpenses(@Body requests: List<ExpenseRequest>): Response<List<ExpenseResponse>>
+
+    // Categories
+    @GET("api/categories")
+    suspend fun getAllCategories(): Response<List<CategoryResponse>>
+
+    @POST("api/categories")
+    suspend fun createCategory(@Body request: CategoryRequest): Response<CategoryResponse>
+
+    @PUT("api/categories/{id}")
+    suspend fun updateCategory(@Path("id") id: Long, @Body request: CategoryRequest): Response<CategoryResponse>
+
+    @DELETE("api/categories/{id}")
+    suspend fun deleteCategory(@Path("id") id: Long): Response<Void>
 
     // Stats
     @GET("api/stats/daily")

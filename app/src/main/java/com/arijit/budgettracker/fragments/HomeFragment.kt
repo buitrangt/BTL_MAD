@@ -95,6 +95,8 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
+        viewModel.refreshServerStats()
+
         // Force refresh amounts display
         viewModel.todayAmount.value?.let { todayAmt.text = "₫%.2f".format(it) }
         viewModel.weekAmount.value?.let { thisWeekAmt.text = "₫%.2f".format(it) }

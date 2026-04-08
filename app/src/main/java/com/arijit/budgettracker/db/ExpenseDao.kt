@@ -22,7 +22,7 @@ interface ExpenseDao {
     @Query("SELECT * FROM expenses ORDER BY timestamp DESC")
     fun getAllExpensesFlow(): Flow<List<Expense>>
 
-    @Query("SELECT * FROM expenses WHERE timestamp <= (CAST(strftime('%s','now') AS INTEGER) * 1000) ORDER BY timestamp DESC LIMIT 3")
+    @Query("SELECT * FROM expenses ORDER BY timestamp DESC LIMIT 3")
     fun getLatest8Expenses(): LiveData<List<Expense>>
 
     @Delete

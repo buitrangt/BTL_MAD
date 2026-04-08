@@ -38,6 +38,7 @@ class AddTransActivity : AppCompatActivity() {
     private var selectedNote: String = ""
     private var selectedAmount: String = ""
     private var selectedDate: Long = System.currentTimeMillis()
+    private var originalExpense: Expense? = null
     
     private var editingExpenseId: Int = 0 // 0 means new expense
     private var isEditMode: Boolean = false
@@ -61,6 +62,15 @@ class AddTransActivity : AppCompatActivity() {
             selectedAmount = intent.getDoubleExtra("amount", 0.0).toString()
             selectedNote = intent.getStringExtra("note") ?: ""
             selectedDate = intent.getLongExtra("timeStamp", System.currentTimeMillis())
+            originalExpense = Expense(
+                id = editingExpenseId,
+                amount = intent.getDoubleExtra("amount", 0.0),
+                category = selectedCategory,
+                note = selectedNote,
+                type = transactionType,
+                timeStamp = selectedDate,
+                synced = true
+            )
         }
 
         initViews()
@@ -310,14 +320,24 @@ class AddTransActivity : AppCompatActivity() {
             
             if (isEditMode) {
                 // Update existing expense
-                val expense = Expense(
+                var expense = Expense(
                     id = editingExpenseId,
                     amount = selectedAmount.toDoubleOrNull() ?: 0.0,
                     category = selectedCategory.trim(),
                     note = selectedNote,
                     type = transactionType,
-                    timeStamp = selectedDate
+                    timeStamp = selectedDate,
+                    synced = true
                 )
+
+                val oldExpense = originalExpense
+                if (oldExpense != null) {
+                    val syncedToServer = SyncManager.updateExpenseIfOnline(applicationContext, oldExpense, expense)
+                    if (!syncedToServer) {
+                        Toast.makeText(this@AddTransActivity, "Đã lưu local, chưa đồng bộ sửa đổi lên server", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
                 dao.updateExpense(expense)
                 Toast.makeText(this@AddTransActivity, "Cập nhật thành công", Toast.LENGTH_SHORT).show()
             } else {
@@ -330,9 +350,10 @@ class AddTransActivity : AppCompatActivity() {
                     timeStamp = selectedDate
                 )
                 dao.insertExpense(expense)
+
+                SyncManager.syncIfOnline(applicationContext)
             }
-            
-            SyncManager.syncIfOnline(applicationContext)
+
             finish()
         }
     }

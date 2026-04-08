@@ -6,10 +6,17 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.db.ExpenseDatabase
+import com.arijit.budgettracker.utils.SyncManager
+import com.arijit.budgettracker.utils.TokenManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import java.util.Calendar
 import java.util.TimeZone
 import kotlin.math.exp
@@ -72,6 +79,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 _monthSavings.value = monthlyIncomeAmount - monthlyExpenseAmount
             }
         }
+
+        refreshServerStats()
     }
 
     private fun getStartOfDay(now: Long): Long {
@@ -151,6 +160,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteExpense(expense: Expense) {
         viewModelScope.launch {
             expenseDao.deleteExpense(expense)
+            SyncManager.deleteExpenseIfOnline(getApplication(), expense)
         }
     }
 
