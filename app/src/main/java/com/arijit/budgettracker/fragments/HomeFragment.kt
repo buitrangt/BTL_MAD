@@ -13,12 +13,16 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.arijit.budgettracker.AddTransActivity
+import com.arijit.budgettracker.MainActivity
 import com.arijit.budgettracker.R
 import com.arijit.budgettracker.models.HomeViewModel
 import com.arijit.budgettracker.utils.HomeRecentAdapter
+import com.arijit.budgettracker.utils.SyncManager
 import com.arijit.budgettracker.utils.TokenManager
 import com.arijit.budgettracker.utils.Vibration
 import com.arijit.budgettracker.utils.CurrencyPrefs
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
     private lateinit var todayAmt: TextView
@@ -56,6 +60,10 @@ class HomeFragment : Fragment() {
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
+        view.findViewById<TextView>(R.id.tv_see_all).setOnClickListener {
+            (activity as? MainActivity)?.navigateToHistory()
+        }
+
         adapter.onDeleteClick = { expense ->
             showDeleteConfirmDialog(expense)
         }
@@ -72,7 +80,7 @@ class HomeFragment : Fragment() {
         }
 
         viewModel = ViewModelProvider(this)[HomeViewModel::class.java]
-        viewModel.latestExpenses.observe(viewLifecycleOwner) { expenses ->
+        viewModel.recentExpenses.observe(viewLifecycleOwner) { expenses ->
             adapter.submitList(expenses)
         }
 
@@ -94,8 +102,6 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-
-        viewModel.refreshServerStats()
 
         // Force refresh amounts display
         viewModel.todayAmount.value?.let { todayAmt.text = "₫%.2f".format(it) }

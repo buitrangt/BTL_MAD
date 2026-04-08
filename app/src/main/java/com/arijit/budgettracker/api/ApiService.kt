@@ -6,12 +6,19 @@ import retrofit2.Response
 import retrofit2.http.*
 
 // DTOs
-data class ExpenseRequest(val amount: Double, val category: String, val timeStamp: Long)
+data class ExpenseRequest(
+    val amount: Double,
+    val category: String,
+    val timeStamp: Long,
+    val note: String? = null,
+    val type: String? = null
+)
 data class ExpenseResponse(
     val id: Long,
     val amount: Double,
     val category: String,
-    val type: String = "EXPENSE",
+    val type: String? = null,
+    val note: String? = null,
     val timeStamp: Long
 )
 data class TransactionResponse(

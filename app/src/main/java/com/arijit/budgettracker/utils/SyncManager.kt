@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import com.arijit.budgettracker.api.ExpenseRequest
 import com.arijit.budgettracker.api.RetrofitClient
+import com.arijit.budgettracker.api.TransactionResponse
 import com.arijit.budgettracker.db.Category
 import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.db.ExpenseDatabase
@@ -32,7 +33,7 @@ object SyncManager {
                             amount = expense.amount,
                             category = expense.category,
                             timeStamp = expense.timeStamp,
-                            note = expense.note,
+                            note = expense.note.takeIf { it.isNotBlank() },
                             type = expense.type
                         )
                     }
@@ -40,35 +41,23 @@ object SyncManager {
                     val response = api.syncExpenses(requests)
                     if (response.isSuccessful) {
                         dao.markAsSynced(unsynced.map { it.id })
+                        // Backfill remoteId so future updates target the correct server row.
+                        response.body().orEmpty().forEach { remote ->
+                            val normalizedTs = normalizeTimestamp(remote.timeStamp)
+                            val local = dao.getOneByIdentity(remote.amount, remote.category, normalizedTs)
+                            if (local != null && local.remoteId == null) {
+                                dao.setRemoteId(local.id, remote.id)
+                            }
+                        }
                     }
                 }
 
-                // Pull server expenses to local so existing cloud data appears after login/new install.
-                val remoteExpensesRes = api.getAllExpenses()
-                if (remoteExpensesRes.isSuccessful) {
-                    remoteExpensesRes.body().orEmpty().forEach { remote ->
-                        val normalizedType = "expense"
-                        val normalizedTimestamp = normalizeTimestamp(remote.timeStamp)
-                        val exists = dao.countBySignature(
-                            amount = remote.amount,
-                            category = remote.category,
-                            note = "",
-                            type = normalizedType,
-                            timeStamp = normalizedTimestamp
-                        ) > 0
-
-                        if (!exists) {
-                            dao.insertExpense(
-                                Expense(
-                                    amount = remote.amount,
-                                    category = remote.category,
-                                    note = "",
-                                    type = normalizedType,
-                                    timeStamp = normalizedTimestamp,
-                                    synced = true
-                                )
-                            )
-                        }
+                // Pull server transactions to local so cloud data appears after login/new install.
+                // Using /api/transactions avoids null category issues and preserves note/type.
+                val remoteTxRes = api.getAllTransactions()
+                if (remoteTxRes.isSuccessful) {
+                    remoteTxRes.body().orEmpty().forEach { tx ->
+                        upsertFromTransaction(dao, tx)
                     }
                 }
 
@@ -93,6 +82,60 @@ object SyncManager {
                 e.printStackTrace()
             }
         }
+    }
+
+    private suspend fun upsertFromTransaction(dao: com.arijit.budgettracker.db.ExpenseDao, tx: TransactionResponse) {
+        val normalizedTimestamp = normalizeTimestamp(tx.timeStamp)
+        val category = tx.categoryName ?: tx.name
+        val normalizedType = tx.type.trim().lowercase().ifEmpty { "expense" }
+
+        // 1) Prefer matching by remoteId (stable).
+        val existingByRemote = dao.getByRemoteId(tx.id)
+        if (existingByRemote != null) {
+            dao.updateExpense(
+                existingByRemote.copy(
+                    amount = tx.amount,
+                    name = tx.name,
+                    category = category,
+                    note = tx.note ?: "",
+                    type = normalizedType,
+                    timeStamp = normalizedTimestamp,
+                    synced = true
+                )
+            )
+            return
+        }
+
+        // 2) If this was created locally, attach remoteId to it.
+        val existingByIdentity = dao.getOneByIdentity(tx.amount, category, normalizedTimestamp)
+        if (existingByIdentity != null) {
+            dao.updateExpense(
+                existingByIdentity.copy(
+                    remoteId = tx.id,
+                    amount = tx.amount,
+                    name = tx.name,
+                    note = tx.note ?: "",
+                    type = normalizedType,
+                    synced = true
+                )
+            )
+            return
+        }
+
+        // 3) Otherwise insert as server-pulled row.
+        dao.insertExpense(
+            Expense(
+                remoteId = tx.id,
+                amount = tx.amount,
+                name = tx.name,
+                category = category,
+                note = tx.note ?: "",
+                type = normalizedType,
+                timeStamp = normalizedTimestamp,
+                localCreatedAt = 0L,
+                synced = true
+            )
+        )
     }
 
     suspend fun deleteExpenseIfOnline(context: Context, expense: Expense): Boolean {
@@ -125,28 +168,27 @@ object SyncManager {
         return withContext(Dispatchers.IO) {
             try {
                 val api = RetrofitClient.getApiService(context)
-                val remoteRes = api.getAllExpenses()
-                if (!remoteRes.isSuccessful) return@withContext false
-
                 val request = ExpenseRequest(
                     amount = newExpense.amount,
                     category = newExpense.category,
                     timeStamp = newExpense.timeStamp,
-                    note = newExpense.note,
+                    note = newExpense.note.takeIf { it.isNotBlank() },
                     type = newExpense.type
                 )
 
-                val target = remoteRes.body()?.firstOrNull {
-                    almostEqual(it.amount, oldExpense.amount) &&
-                        it.timeStamp == oldExpense.timeStamp &&
-                        it.category == oldExpense.category
-                }
+                val targetId = newExpense.remoteId
+                    ?: oldExpense.remoteId
+                    ?: run {
+                        val remoteRes = api.getAllExpenses()
+                        if (!remoteRes.isSuccessful) return@withContext false
+                        remoteRes.body()?.firstOrNull {
+                            almostEqual(it.amount, oldExpense.amount) &&
+                                it.timeStamp == oldExpense.timeStamp &&
+                                it.category == oldExpense.category
+                        }?.id
+                    }
 
-                if (target != null) {
-                    api.updateExpense(target.id, request).isSuccessful
-                } else {
-                    false
-                }
+                if (targetId != null) api.updateExpense(targetId, request).isSuccessful else false
             } catch (_: Exception) {
                 false
             }

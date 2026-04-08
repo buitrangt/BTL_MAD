@@ -111,6 +111,8 @@ public class TransactionServiceImpl implements TransactionService {
         }
         String normalized = type.trim().toLowerCase();
         return normalized.isEmpty() ? "expense" : normalized;
+    }
+
     @Override
     public List<TransactionResponse> searchTransactions(String userEmail, String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {

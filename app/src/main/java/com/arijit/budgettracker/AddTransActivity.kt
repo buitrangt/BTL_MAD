@@ -42,6 +42,7 @@ class AddTransActivity : AppCompatActivity() {
     
     private var editingExpenseId: Int = 0 // 0 means new expense
     private var isEditMode: Boolean = false
+    private var editingRemoteId: Long? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,17 +55,21 @@ class AddTransActivity : AppCompatActivity() {
         }
 
         // Check if editing
-        if (intent.hasExtra("expenseId")) {
+        if (intent.hasExtra("expenseId") || intent.hasExtra("remoteId")) {
             isEditMode = true
             editingExpenseId = intent.getIntExtra("expenseId", 0)
+            editingRemoteId = intent.getLongExtra("remoteId", 0L).takeIf { it > 0L }
             transactionType = intent.getStringExtra("type") ?: "expense"
             selectedCategory = intent.getStringExtra("category") ?: ""
+            val selectedName = intent.getStringExtra("name") ?: selectedCategory
             selectedAmount = intent.getDoubleExtra("amount", 0.0).toString()
             selectedNote = intent.getStringExtra("note") ?: ""
             selectedDate = intent.getLongExtra("timeStamp", System.currentTimeMillis())
             originalExpense = Expense(
                 id = editingExpenseId,
+                remoteId = editingRemoteId,
                 amount = intent.getDoubleExtra("amount", 0.0),
+                name = selectedName,
                 category = selectedCategory,
                 note = selectedNote,
                 type = transactionType,
@@ -320,30 +325,42 @@ class AddTransActivity : AppCompatActivity() {
             
             if (isEditMode) {
                 // Update existing expense
-                var expense = Expense(
-                    id = editingExpenseId,
+                val existing = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    dao.getById(editingExpenseId) ?: (editingRemoteId?.let { dao.getByRemoteId(it) })
+                }
+                val resolvedId = existing?.id ?: editingExpenseId
+                val resolvedRemoteId = existing?.remoteId ?: editingRemoteId
+                val updated = Expense(
+                    id = resolvedId,
                     amount = selectedAmount.toDoubleOrNull() ?: 0.0,
+                    name = selectedCategory.trim(),
                     category = selectedCategory.trim(),
                     note = selectedNote,
                     type = transactionType,
                     timeStamp = selectedDate,
-                    synced = true
+                    remoteId = resolvedRemoteId,
+                    localCreatedAt = existing?.localCreatedAt ?: System.currentTimeMillis(),
+                    synced = false
                 )
 
-                val oldExpense = originalExpense
-                if (oldExpense != null) {
-                    val syncedToServer = SyncManager.updateExpenseIfOnline(applicationContext, oldExpense, expense)
-                    if (!syncedToServer) {
-                        Toast.makeText(this@AddTransActivity, "Đã lưu local, chưa đồng bộ sửa đổi lên server", Toast.LENGTH_SHORT).show()
-                    }
+                val oldExpense = existing ?: originalExpense
+                val syncedToServer = if (oldExpense != null) {
+                    SyncManager.updateExpenseIfOnline(applicationContext, oldExpense, updated)
+                } else {
+                    false
                 }
 
-                dao.updateExpense(expense)
+                dao.updateExpense(updated.copy(synced = syncedToServer))
+                if (!syncedToServer) {
+                    Toast.makeText(this@AddTransActivity, "Đã lưu local, chưa đồng bộ sửa đổi lên server", Toast.LENGTH_SHORT).show()
+                    SyncManager.syncIfOnline(applicationContext)
+                }
                 Toast.makeText(this@AddTransActivity, "Cập nhật thành công", Toast.LENGTH_SHORT).show()
             } else {
                 // Insert new expense
                 val expense = Expense(
                     amount = selectedAmount.toDoubleOrNull() ?: 0.0,
+                    name = selectedCategory.trim(),
                     category = selectedCategory.trim(),
                     note = selectedNote,
                     type = transactionType,

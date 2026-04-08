@@ -34,7 +34,7 @@ class HistoryAdapter(
         val expenseRecyclerView: RecyclerView = itemView.findViewById(R.id.expense_rv)
         
         // Cache nested adapter to avoid recreating on every bind
-        var expenseAdapter: ExpenseAdapter? = null
+        var expenseAdapter: HomeRecentAdapter? = null
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryViewHolder {
@@ -55,7 +55,10 @@ class HistoryAdapter(
 
         // Reuse cached adapter (avoid recreation on every bind)
         if (holder.expenseAdapter == null) {
-            holder.expenseAdapter = ExpenseAdapter()
+            holder.expenseAdapter = HomeRecentAdapter().apply {
+                onEditClick = { expense -> onExpenseEditClick?.invoke(expense) }
+                onDeleteClick = { expense -> onExpenseDeleteClick?.invoke(expense) }
+            }
             holder.expenseRecyclerView.adapter = holder.expenseAdapter
         }
         

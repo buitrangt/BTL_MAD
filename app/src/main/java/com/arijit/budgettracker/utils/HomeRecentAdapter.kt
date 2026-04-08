@@ -69,7 +69,8 @@ class HomeRecentAdapter(
         private fun formatDate(timeStamp: Long): String {
             val bangkok = java.util.TimeZone.getTimeZone("Asia/Bangkok")
             val calendar = java.util.Calendar.getInstance(bangkok)
-            calendar.timeInMillis = timeStamp
+            val tsMillis = if (timeStamp in 1..9_999_999_999L) timeStamp * 1000 else timeStamp
+            calendar.timeInMillis = tsMillis
             
             val today = java.util.Calendar.getInstance(bangkok)
             val yesterday = java.util.Calendar.getInstance(bangkok).apply { add(java.util.Calendar.DAY_OF_YEAR, -1) }

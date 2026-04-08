@@ -6,6 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F2F4F8"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     tools:context=".MainActivity">
 
     <!-- HEADER -->
@@ -26,15 +28,6 @@
             android:textColor="#1A2235"
             android:textSize="30sp" />
 
-        <ImageView
-            android:id="@+id/settings"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:src="@drawable/settings"
-            app:tint="#7F8795" />
-
     </RelativeLayout>
 
     <!-- CONTAINER -->
@@ -42,39 +35,27 @@
         android:id="@+id/pager"
         android:layout_below="@id/header"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_nav_container" />
 
     <!-- DOCK -->
-    <androidx.cardview.widget.CardView
+    <FrameLayout
+        android:id="@+id/bottom_nav_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_marginHorizontal="16dp"
         android:layout_marginBottom="12dp"
-        app:cardCornerRadius="28dp"
-        app:cardElevation="8dp">
+        android:background="@drawable/bg_bottom_nav_container"
+        android:elevation="8dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
-        <RelativeLayout
+        <include
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#FFFFFF">
+            android:layout_height="84dp"
+            layout="@layout/layout_custom_bottom_nav" />
 
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/tab_layout"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:background="#FFFFFF"
-                app:tabIconTint="#A8AFBA"
-                app:tabIndicatorColor="#13B67A"
-                app:tabIndicatorHeight="3dp"
-                app:tabRippleColor="#1A13B67A"
-                app:tabSelectedTextColor="#13B67A"
-                app:tabTextColor="#A8AFBA"
-                app:tabGravity="center"
-                app:tabMode="scrollable" />
-
-        </RelativeLayout>
-
-    </androidx.cardview.widget.CardView>
+    </FrameLayout>
     <include layout="@layout/layout_fab_chat" />
 </RelativeLayout>

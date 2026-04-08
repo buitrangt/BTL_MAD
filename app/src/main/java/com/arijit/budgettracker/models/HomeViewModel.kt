@@ -6,24 +6,20 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.db.ExpenseDatabase
 import com.arijit.budgettracker.utils.SyncManager
-import com.arijit.budgettracker.utils.TokenManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import java.util.Calendar
 import java.util.TimeZone
-import kotlin.math.exp
+import kotlin.math.max
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val expenseDao = ExpenseDatabase.Companion.getDatabase(application).expenseDao()
-    val latestExpenses: LiveData<List<Expense>> = expenseDao.getLatest8Expenses()
+    // Use a stable in-memory sort to avoid "LIMIT + mixed seconds/millis" glitches.
+    private val _recentExpenses = MutableLiveData<List<Expense>>(emptyList())
+    val recentExpenses: LiveData<List<Expense>> = _recentExpenses
     val allExpenses: LiveData<List<Expense>> = expenseDao.getAllExpensesFlow().asLiveData()
     
     private val _todayAmount = MutableLiveData<Double>()
@@ -42,7 +38,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val monthSavings: LiveData<Double> = _monthSavings
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             expenseDao.getAllExpensesFlow().collect { expenses ->
                 val now = System.currentTimeMillis()
                 val startOfDay = getStartOfDay(now)
@@ -58,29 +54,56 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 val endOfMonth = nextMonthCal.timeInMillis
 
-                // Note: timeStamp in DB is in SECONDS, need to convert to milliseconds
-                _todayAmount.value = expenses.filter { (it.timeStamp * 1000) >= startOfDay }.sumOf { it.amount }
-                _weekAmount.value = expenses.filter { (it.timeStamp * 1000) >= startOfWeek }.sumOf { it.amount }
-                _monthAmount.value = expenses.filter { (it.timeStamp * 1000) >= startOfMonth }.sumOf { it.amount }
+                // Some existing data may store timestamps in seconds; normalize to millis.
+                fun tsMillis(ts: Long): Long = if (ts in 1..9_999_999_999L) ts * 1000 else ts
+
+                val recent = expenses
+                    .sortedByDescending { e ->
+                        max(tsMillis(e.localCreatedAt), tsMillis(e.timeStamp))
+                    }
+                    .take(8)
+                _recentExpenses.postValue(recent)
+
+                // Home cards are "spending" cards, so only count expense type.
+                _todayAmount.postValue(
+                    expenses
+                    .filter { it.type == "expense" }
+                    .filter { tsMillis(it.timeStamp) >= startOfDay && tsMillis(it.timeStamp) < endOfDay }
+                    .sumOf { it.amount }
+                )
+                _weekAmount.postValue(
+                    expenses
+                    .filter { it.type == "expense" }
+                    .filter { tsMillis(it.timeStamp) >= startOfWeek && tsMillis(it.timeStamp) < endOfWeek }
+                    .sumOf { it.amount }
+                )
+                _monthAmount.postValue(
+                    expenses
+                    .filter { it.type == "expense" }
+                    .filter { tsMillis(it.timeStamp) >= startOfMonth && tsMillis(it.timeStamp) < endOfMonth }
+                    .sumOf { it.amount }
+                )
                 
-                // Tính chi tiêu tháng (chỉ EXPENSE)
+                // Tính chi tiêu tháng (chỉ expense)
                 val monthlyExpenseAmount = expenses
-                    .filter { (it.timeStamp * 1000) >= startOfMonth && it.type == "EXPENSE" }
+                    .filter { it.type == "expense" }
+                    .filter { tsMillis(it.timeStamp) >= startOfMonth && tsMillis(it.timeStamp) < endOfMonth }
                     .sumOf { it.amount }
-                _monthExpense.value = monthlyExpenseAmount
+                _monthExpense.postValue(monthlyExpenseAmount)
                 
-                // Tính thu nhập tháng (chỉ INCOME)
+                // Tính thu nhập tháng (chỉ income)
                 val monthlyIncomeAmount = expenses
-                    .filter { (it.timeStamp * 1000) >= startOfMonth && it.type == "INCOME" }
+                    .filter { it.type == "income" }
+                    .filter { tsMillis(it.timeStamp) >= startOfMonth && tsMillis(it.timeStamp) < endOfMonth }
                     .sumOf { it.amount }
-                _monthIncome.value = monthlyIncomeAmount
+                _monthIncome.postValue(monthlyIncomeAmount)
                 
                 // Tiết kiệm = Thu nhập - Chi tiêu
-                _monthSavings.value = monthlyIncomeAmount - monthlyExpenseAmount
+                _monthSavings.postValue(monthlyIncomeAmount - monthlyExpenseAmount)
             }
         }
 
-        refreshServerStats()
+        // Do not override local calculations with server stats on Home.
     }
 
     private fun getStartOfDay(now: Long): Long {
@@ -132,11 +155,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val expenses = allExpenses.value ?: emptyList()
         
         val income = expenses
-            .filter { (it.timeStamp * 1000) >= monthStart && (it.timeStamp * 1000) <= monthEnd && it.type == "INCOME" }
+            .filter { it.timeStamp >= monthStart && it.timeStamp <= monthEnd && it.type == "income" }
             .sumOf { it.amount }
         
         val expense = expenses
-            .filter { (it.timeStamp * 1000) >= monthStart && (it.timeStamp * 1000) <= monthEnd && it.type == "EXPENSE" }
+            .filter { it.timeStamp >= monthStart && it.timeStamp <= monthEnd && it.type == "expense" }
             .sumOf { it.amount }
         
         val savings = income - expense
@@ -166,39 +189,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateExpense(expense: Expense) {
         viewModelScope.launch {
-            if (!TokenManager.isLoggedIn(getApplication()) || !isOnline()) return@launch
-
-            try {
-                val api = RetrofitClient.getApiService(getApplication())
-                val daily = withContext(Dispatchers.IO) { api.getDailyStats() }
-                val weekly = withContext(Dispatchers.IO) { api.getWeeklyStats() }
-                val monthly = withContext(Dispatchers.IO) { api.getMonthlyStats() }
-
-                if (daily.isSuccessful && daily.body() != null) {
-                    val serverValue = daily.body()!!.totalAmount
-                    val localValue = _todayAmount.value ?: 0.0
-                    if (!(serverValue == 0.0 && localValue > 0.0)) {
-                        _todayAmount.value = serverValue
-                    }
-                }
-                if (weekly.isSuccessful && weekly.body() != null) {
-                    val serverValue = weekly.body()!!.totalAmount
-                    val localValue = _weekAmount.value ?: 0.0
-                    if (!(serverValue == 0.0 && localValue > 0.0)) {
-                        _weekAmount.value = serverValue
-                    }
-                }
-                if (monthly.isSuccessful && monthly.body() != null) {
-                    val serverValue = monthly.body()!!.totalAmount
-                    val localValue = _monthAmount.value ?: 0.0
-                    if (!(serverValue == 0.0 && localValue > 0.0)) {
-                        _monthAmount.value = serverValue
-                    }
-                }
-            } catch (_: Exception) {
-                // Keep local Room-calculated values as fallback when server is unavailable.
-            }
             expenseDao.updateExpense(expense)
+            SyncManager.syncIfOnline(getApplication())
         }
     }
 }

@@ -2,29 +2,28 @@ package com.arijit.budgettracker
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
-import com.arijit.budgettracker.db.Expense
-import com.arijit.budgettracker.db.ExpenseDatabase
 import com.arijit.budgettracker.utils.SyncManager
 import com.arijit.budgettracker.utils.Vibration
 import com.arijit.budgettracker.utils.ViewPagerAdapter
-import com.google.android.material.tabs.TabLayout
-import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.coroutines.launch
-import java.util.Calendar
+import android.widget.ImageButton
+import androidx.core.widget.ImageViewCompat
 
 class MainActivity : BaseActivity() {
     private lateinit var viewPager: ViewPager2
     private lateinit var adapter: ViewPagerAdapter
     private lateinit var headerTxt: TextView
-    private lateinit var settings: ImageView
+    private lateinit var navHome: ImageButton
+    private lateinit var navHistory: ImageButton
+    private lateinit var navAdd: ImageButton
+    private lateinit var navStats: ImageButton
+    private lateinit var navProfile: ImageButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,48 +39,60 @@ class MainActivity : BaseActivity() {
         viewPager = findViewById(R.id.pager)
         adapter = ViewPagerAdapter(this)
         headerTxt = findViewById(R.id.header_txt)
-        settings = findViewById(R.id.settings)
-
-        settings.setOnClickListener {
-            Vibration.vibrate(this, 50)
-            startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-        }
 
         viewPager.adapter = adapter
 
-        val tabLayout = findViewById<TabLayout>(R.id.tab_layout)
-        val tabIcons = arrayOf(R.drawable.home, R.drawable.history, R.drawable.stats)
+        navHome = findViewById(R.id.nav_home)
+        navHistory = findViewById(R.id.nav_history)
+        navAdd = findViewById(R.id.nav_add)
+        navStats = findViewById(R.id.nav_stats)
+        navProfile = findViewById(R.id.nav_profile)
 
-        TabLayoutMediator(tabLayout, viewPager) { tab, position ->
-            tab.setIcon(tabIcons[position])
-        }.attach()
+        navAdd.setOnClickListener {
+            Vibration.vibrate(this, 50)
+            startActivity(Intent(this, AddTransActivity::class.java))
+        }
+
+        navHome.setOnClickListener { viewPager.currentItem = 0 }
+        navHistory.setOnClickListener { viewPager.currentItem = 1 }
+        navStats.setOnClickListener { viewPager.currentItem = 2 }
+        navProfile.setOnClickListener { viewPager.currentItem = 3 }
+
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                headerTxt.text = when (position) {
+                    0 -> "Home"
+                    1 -> "History"
+                    2 -> "Stats"
+                    3 -> ""
+                    else -> "Home"
+                }
+                updateNavSelection(position)
+            }
+        })
+
+        updateNavSelection(0)
 
         // Sync unsynced expenses when app opens
         lifecycleScope.launch {
             SyncManager.syncIfOnline(applicationContext)
         }
+    }
 
-        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {
-                headerTxt.animate()
-                    .alpha(0f)
-                    .setDuration(100)
-                    .withEndAction {
-                        headerTxt.text = when (tab?.position) {
-                            0 -> "Home"
-                            1 -> "History"
-                            2 -> "Stats"
-                            else -> "Home"
-                        }
-                        headerTxt.animate()
-                            .alpha(1f)
-                            .setDuration(100)
-                            .start()
-                    }.start()
-            }
+    fun navigateToHistory() {
+        viewPager.currentItem = 1
+    }
 
-            override fun onTabUnselected(tab: TabLayout.Tab) {}
-            override fun onTabReselected(tab: TabLayout.Tab) {}
-        })
+    private fun updateNavSelection(position: Int) {
+        navHome.isSelected = position == 0
+        navHistory.isSelected = position == 1
+        navStats.isSelected = position == 2
+        navProfile.isSelected = position == 3
+
+        ImageViewCompat.setImageTintList(navHome, navHome.imageTintList)
+        ImageViewCompat.setImageTintList(navHistory, navHistory.imageTintList)
+        ImageViewCompat.setImageTintList(navStats, navStats.imageTintList)
+        ImageViewCompat.setImageTintList(navProfile, navProfile.imageTintList)
     }
 }

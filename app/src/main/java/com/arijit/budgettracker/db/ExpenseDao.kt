@@ -19,14 +19,33 @@ interface ExpenseDao {
     @Update
     suspend fun updateExpense(expense: Expense)
 
+    @Query("SELECT * FROM expenses WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Int): Expense?
+
+    @Query("SELECT * FROM expenses WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun getByRemoteId(remoteId: Long): Expense?
+
+    @Query("SELECT * FROM expenses WHERE amount = :amount AND category = :category AND timestamp = :timeStamp LIMIT 1")
+    suspend fun getOneByIdentity(amount: Double, category: String, timeStamp: Long): Expense?
+
     @Query("SELECT * FROM expenses ORDER BY timestamp DESC")
     fun getAllExpensesFlow(): Flow<List<Expense>>
 
-    @Query("SELECT * FROM expenses ORDER BY timestamp DESC LIMIT 10")
+    @Query("""
+        SELECT *
+        FROM expenses
+        ORDER BY
+          CASE WHEN localCreatedAt IS NULL OR localCreatedAt = 0 THEN timestamp ELSE localCreatedAt END DESC,
+          id DESC
+        LIMIT 8
+    """)
     fun getLatest8Expenses(): LiveData<List<Expense>>
 
     @Delete
     suspend fun deleteExpense(expense: Expense)
+
+    @Query("DELETE FROM expenses WHERE remoteId = :remoteId")
+    suspend fun deleteByRemoteId(remoteId: Long)
 
     @Query("DELETE FROM expenses")
     suspend fun deleteAll()
@@ -51,4 +70,14 @@ interface ExpenseDao {
         type: String,
         timeStamp: Long
     ): Int
+
+    @Query("SELECT COUNT(*) FROM expenses WHERE amount = :amount AND category = :category AND timestamp = :timeStamp")
+    suspend fun countByIdentity(
+        amount: Double,
+        category: String,
+        timeStamp: Long
+    ): Int
+
+    @Query("UPDATE expenses SET remoteId = :remoteId WHERE id = :id")
+    suspend fun setRemoteId(id: Int, remoteId: Long)
 }

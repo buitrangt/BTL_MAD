@@ -126,6 +126,8 @@ public class ExpenseApiServiceImpl implements ExpenseApiService {
                 .id(transaction.getId())
                 .amount(transaction.getAmount())
                 .category(transaction.getCategory() != null ? transaction.getCategory().getName() : null)
+                .type(transaction.getType())
+                .note(transaction.getNote())
                 .timeStamp(transaction.getTimeStamp())
                 .build();
     }

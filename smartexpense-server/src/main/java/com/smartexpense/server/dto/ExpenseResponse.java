@@ -13,5 +13,7 @@ public class ExpenseResponse {
     private Long id;
     private BigDecimal amount;
     private String category;
+    private String type;
+    private String note;
     private Long timeStamp;
 }

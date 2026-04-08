@@ -25,4 +25,7 @@ interface CategoryDao {
 
     @Query("SELECT COUNT(*) FROM categories WHERE LOWER(name) = LOWER(:name)")
     suspend fun countByName(name: String): Int
+
+    @Query("DELETE FROM categories")
+    suspend fun deleteAll()
 }
