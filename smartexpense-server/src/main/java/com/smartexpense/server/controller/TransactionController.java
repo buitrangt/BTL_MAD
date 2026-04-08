@@ -39,4 +39,10 @@ public class TransactionController {
             Authentication auth, @Valid @RequestBody List<TransactionRequest> requests) {
         return ResponseEntity.ok(transactionService.syncTransactions(auth.getName(), requests));
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<TransactionResponse>> searchTransactions(
+            Authentication auth, @RequestParam String keyword) {
+        return ResponseEntity.ok(transactionService.searchTransactions(auth.getName(), keyword));
+    }
 }

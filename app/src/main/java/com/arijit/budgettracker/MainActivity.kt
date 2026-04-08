@@ -91,8 +91,10 @@ class MainActivity : AppCompatActivity() {
                         dao.insertExpense(
                             Expense(
                                 amount = amount,
+                                name = category,
                                 category = category,
-                                timeStamp = cal.timeInMillis + (i * 3600000L)
+                                type = "EXPENSE",
+                                timeStamp = (cal.timeInMillis + (i * 3600000L)) / 1000
                             )
                         )
                     }

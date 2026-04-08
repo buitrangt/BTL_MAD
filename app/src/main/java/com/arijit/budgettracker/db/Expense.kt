@@ -7,7 +7,9 @@ import androidx.room.PrimaryKey
 data class Expense(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val amount: Double,
-    val category: String,
+    val name: String,  // Transaction name (what user is paying for)
+    val category: String,  // Category name
+    val type: String = "EXPENSE",  // "INCOME" hoặc "EXPENSE"
     val timeStamp: Long = System.currentTimeMillis(),
     val synced: Boolean = false,
     val type: String = "EXPENSE",

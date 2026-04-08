@@ -28,6 +28,9 @@ class HistoryAdapter : ListAdapter<DailyExpense, HistoryAdapter.HistoryViewHolde
     inner class HistoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val textViewDate: TextView = itemView.findViewById(R.id.date)
         val expenseRecyclerView: RecyclerView = itemView.findViewById(R.id.expense_rv)
+        
+        // Cache nested adapter to avoid recreating on every bind
+        var expenseAdapter: ExpenseAdapter? = null
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryViewHolder {
@@ -40,10 +43,19 @@ class HistoryAdapter : ListAdapter<DailyExpense, HistoryAdapter.HistoryViewHolde
         val dailyExpense = getItem(position)
         holder.textViewDate.text = dailyExpense.date
 
-        // Reuse existing adapter if available, otherwise create new one
-        val innerAdapter = holder.expenseRecyclerView.adapter as? ExpenseAdapter ?: ExpenseAdapter()
-        holder.expenseRecyclerView.layoutManager = LinearLayoutManager(holder.itemView.context)
-        holder.expenseRecyclerView.adapter = innerAdapter
-        innerAdapter.submitList(dailyExpense.expenses)
+        // Initialize layout manager only once
+        if (holder.expenseRecyclerView.layoutManager == null) {
+            holder.expenseRecyclerView.layoutManager = LinearLayoutManager(holder.itemView.context)
+            holder.expenseRecyclerView.isNestedScrollingEnabled = false
+        }
+
+        // Reuse cached adapter (avoid recreation on every bind)
+        if (holder.expenseAdapter == null) {
+            holder.expenseAdapter = ExpenseAdapter()
+            holder.expenseRecyclerView.adapter = holder.expenseAdapter
+        }
+        
+        // Only update list data
+        holder.expenseAdapter?.submitList(dailyExpense.expenses)
     }
 }

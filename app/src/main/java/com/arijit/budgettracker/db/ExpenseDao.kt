@@ -5,6 +5,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -13,12 +14,15 @@ interface ExpenseDao {
     suspend fun insertExpense(expense: Expense)
 
     @Insert
-    suspend fun insertExpenseAndGetId(expense: Expense): Long
+    suspend fun insertExpenses(expenses: List<Expense>)
 
-    @Query("SELECT * FROM expenses ORDER BY timeStamp DESC")
+    @Update
+    suspend fun updateExpense(expense: Expense)
+
+    @Query("SELECT * FROM expenses ORDER BY timestamp DESC")
     fun getAllExpensesFlow(): Flow<List<Expense>>
 
-    @Query("SELECT * FROM expenses ORDER BY timeStamp DESC limit 8")
+    @Query("SELECT * FROM expenses ORDER BY timestamp DESC limit 8")
     fun getLatest8Expenses(): LiveData<List<Expense>>
 
     @Delete
