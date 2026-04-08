@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import com.arijit.budgettracker.api.ExpenseRequest
 import com.arijit.budgettracker.api.RetrofitClient
+import com.arijit.budgettracker.db.Category
 import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.db.ExpenseDatabase
 import kotlinx.coroutines.Dispatchers
@@ -19,23 +20,73 @@ object SyncManager {
 
         withContext(Dispatchers.IO) {
             try {
-                val dao = ExpenseDatabase.getDatabase(context).expenseDao()
-                val unsynced = dao.getUnsyncedExpenses()
-                if (unsynced.isEmpty()) return@withContext
+                val db = ExpenseDatabase.getDatabase(context)
+                val dao = db.expenseDao()
+                val categoryDao = db.categoryDao()
+                val api = RetrofitClient.getApiService(context)
 
-                val requests = unsynced.map { expense ->
-                    ExpenseRequest(
-                        amount = expense.amount,
-                        category = expense.category,
-                        timeStamp = expense.timeStamp,
-                        note = expense.note,
-                        type = expense.type
-                    )
+                val unsynced = dao.getUnsyncedExpenses()
+                if (unsynced.isNotEmpty()) {
+                    val requests = unsynced.map { expense ->
+                        ExpenseRequest(
+                            amount = expense.amount,
+                            category = expense.category,
+                            timeStamp = expense.timeStamp,
+                            note = expense.note,
+                            type = expense.type
+                        )
+                    }
+
+                    val response = api.syncExpenses(requests)
+                    if (response.isSuccessful) {
+                        dao.markAsSynced(unsynced.map { it.id })
+                    }
                 }
 
-                val response = RetrofitClient.getApiService(context).syncExpenses(requests)
-                if (response.isSuccessful) {
-                    dao.markAsSynced(unsynced.map { it.id })
+                // Pull server expenses to local so existing cloud data appears after login/new install.
+                val remoteExpensesRes = api.getAllExpenses()
+                if (remoteExpensesRes.isSuccessful) {
+                    remoteExpensesRes.body().orEmpty().forEach { remote ->
+                        val normalizedType = "expense"
+                        val normalizedTimestamp = normalizeTimestamp(remote.timeStamp)
+                        val exists = dao.countBySignature(
+                            amount = remote.amount,
+                            category = remote.category,
+                            note = "",
+                            type = normalizedType,
+                            timeStamp = normalizedTimestamp
+                        ) > 0
+
+                        if (!exists) {
+                            dao.insertExpense(
+                                Expense(
+                                    amount = remote.amount,
+                                    category = remote.category,
+                                    note = "",
+                                    type = normalizedType,
+                                    timeStamp = normalizedTimestamp,
+                                    synced = true
+                                )
+                            )
+                        }
+                    }
+                }
+
+                // Pull server categories to local for category picker.
+                val remoteCategoriesRes = api.getAllCategories()
+                if (remoteCategoriesRes.isSuccessful) {
+                    remoteCategoriesRes.body().orEmpty().forEach { remote ->
+                        val exists = categoryDao.countByName(remote.name) > 0
+                        if (!exists) {
+                            categoryDao.insertCategory(
+                                Category(
+                                    name = remote.name,
+                                    description = remote.note ?: "",
+                                    type = "both"
+                                )
+                            )
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 // Sync failed silently — will retry next time
@@ -104,6 +155,10 @@ object SyncManager {
 
     private fun almostEqual(a: Double, b: Double): Boolean {
         return abs(a - b) < 0.0001
+    }
+
+    private fun normalizeTimestamp(timeStamp: Long): Long {
+        return if (timeStamp in 1..9_999_999_999L) timeStamp * 1000 else timeStamp
     }
 
     private fun isOnline(context: Context): Boolean {

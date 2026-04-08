@@ -166,6 +166,38 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateExpense(expense: Expense) {
         viewModelScope.launch {
+            if (!TokenManager.isLoggedIn(getApplication()) || !isOnline()) return@launch
+
+            try {
+                val api = RetrofitClient.getApiService(getApplication())
+                val daily = withContext(Dispatchers.IO) { api.getDailyStats() }
+                val weekly = withContext(Dispatchers.IO) { api.getWeeklyStats() }
+                val monthly = withContext(Dispatchers.IO) { api.getMonthlyStats() }
+
+                if (daily.isSuccessful && daily.body() != null) {
+                    val serverValue = daily.body()!!.totalAmount
+                    val localValue = _todayAmount.value ?: 0.0
+                    if (!(serverValue == 0.0 && localValue > 0.0)) {
+                        _todayAmount.value = serverValue
+                    }
+                }
+                if (weekly.isSuccessful && weekly.body() != null) {
+                    val serverValue = weekly.body()!!.totalAmount
+                    val localValue = _weekAmount.value ?: 0.0
+                    if (!(serverValue == 0.0 && localValue > 0.0)) {
+                        _weekAmount.value = serverValue
+                    }
+                }
+                if (monthly.isSuccessful && monthly.body() != null) {
+                    val serverValue = monthly.body()!!.totalAmount
+                    val localValue = _monthAmount.value ?: 0.0
+                    if (!(serverValue == 0.0 && localValue > 0.0)) {
+                        _monthAmount.value = serverValue
+                    }
+                }
+            } catch (_: Exception) {
+                // Keep local Room-calculated values as fallback when server is unavailable.
+            }
             expenseDao.updateExpense(expense)
         }
     }

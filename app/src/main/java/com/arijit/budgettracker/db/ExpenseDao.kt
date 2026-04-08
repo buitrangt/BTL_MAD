@@ -22,7 +22,7 @@ interface ExpenseDao {
     @Query("SELECT * FROM expenses ORDER BY timestamp DESC")
     fun getAllExpensesFlow(): Flow<List<Expense>>
 
-    @Query("SELECT * FROM expenses ORDER BY timestamp DESC LIMIT 3")
+    @Query("SELECT * FROM expenses ORDER BY timestamp DESC LIMIT 10")
     fun getLatest8Expenses(): LiveData<List<Expense>>
 
     @Delete
@@ -42,4 +42,13 @@ interface ExpenseDao {
 
     @Query("UPDATE expenses SET category = :newCategoryName WHERE category = :oldCategoryName")
     suspend fun updateExpenseCategoryName(oldCategoryName: String, newCategoryName: String)
+
+    @Query("SELECT COUNT(*) FROM expenses WHERE amount = :amount AND category = :category AND note = :note AND type = :type AND timestamp = :timeStamp")
+    suspend fun countBySignature(
+        amount: Double,
+        category: String,
+        note: String,
+        type: String,
+        timeStamp: Long
+    ): Int
 }
