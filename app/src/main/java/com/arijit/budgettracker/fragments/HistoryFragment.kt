@@ -1,5 +1,7 @@
 package com.arijit.budgettracker.fragments
 
+import android.app.AlertDialog
+import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -48,14 +50,8 @@ class HistoryFragment : Fragment() {
     private lateinit var tvMonthLabelIncome: android.widget.TextView
     private lateinit var tvMonthLabelSavings: android.widget.TextView
     
-    // Pagination variables
-    private var currentPage = 1
-    private val pageSize = 10
-    private var isLoadingMore = false
-    private var hasMorePages = true
-    
-    // Store API transactions in memory
-    private var allApiTransactions: List<TransactionResponse> = emptyList()
+    // Local-first: keep a snapshot for filtering (search/date)
+    private var allLocalExpenses: List<Expense> = emptyList()
     private var displayedTransactions: List<DailyExpense> = emptyList()
     
     // Search job for cancellation
@@ -72,6 +68,7 @@ class HistoryFragment : Fragment() {
     
     // TextWatcher as member to avoid recreation and enable removal
     private lateinit var searchTextWatcher: TextWatcher
+    private var hasInitialized = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -82,75 +79,7 @@ class HistoryFragment : Fragment() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 val keyword = s.toString().trim()
-                
-                // Cancel previous search job
-                searchJob?.cancel()
-                
-                if (keyword.isEmpty()) {
-                    searchJob = null
-                    currentPage = 1
-                    hasMorePages = true
-                    // Clear adapter immediately to prevent state mismatch
-                    historyAdapter.submitList(emptyList())
-                    displayPagedTransactions(1)
-                    // Keep stats from current month, not affected by search
-                    if (isDateSelected) {
-                        updateStatsForSelectedMonth()
-                    } else {
-                        calculateAndUpdateStats(allApiTransactions)
-                    }
-                } else {
-                    // Search from API
-                    searchJob = lifecycleScope.launch {
-                        try {
-                            val response = apiService.searchTransactions(keyword)
-                            if (response.isSuccessful && response.body() != null) {
-                                val searchResults = response.body()!!
-                                
-                                // Convert TransactionResponse to Expense
-                                val transactions = searchResults.map { tx ->
-                                    Expense(
-                                        id = tx.id.toInt(),
-                                        amount = tx.amount.toDouble(),
-                                        name = tx.name,
-                                        category = tx.categoryName ?: tx.name,
-                                        type = tx.type,
-                                        timeStamp = tx.timeStamp,
-                                        synced = true
-                                    )
-                                }
-                                
-                                // Group by date and display search results
-                                val grouped = withContext(Dispatchers.Default) {
-                                    groupExpensesByDate(transactions)
-                                }
-                                withContext(Dispatchers.Main) {
-                                    displayedTransactions = grouped
-                                    historyAdapter.submitList(grouped)
-                                    
-                                    // Keep stats from current month, NOT affected by search keyword
-                                    if (isDateSelected) {
-                                        updateStatsForSelectedMonth()
-                                    } else {
-                                        calculateAndUpdateStats(allApiTransactions)
-                                    }
-                                }
-                            } else {
-                                Log.e("HistoryFragment", "Search failed: ${response.code()}")
-                                withContext(Dispatchers.Main) {
-                                    displayedTransactions = emptyList()
-                                    historyAdapter.submitList(emptyList())
-                                }
-                            }
-                        } catch (e: Exception) {
-                            Log.e("HistoryFragment", "Search failed: ${e.message}", e)
-                            withContext(Dispatchers.Main) {
-                                displayedTransactions = emptyList()
-                                historyAdapter.submitList(emptyList())
-                            }
-                        }
-                    }
-                }
+                applyLocalFilters(keyword = keyword)
             }
         }
     }
@@ -176,10 +105,15 @@ class HistoryFragment : Fragment() {
             // Setup SwipeRefreshLayout for pull-to-refresh
             swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout)
             swipeRefreshLayout.setOnRefreshListener {
-                currentPage = 1
-                hasMorePages = true
-                isLoadingMore = false
-                loadTransactionsFromAPI()
+                lifecycleScope.launch {
+                    try {
+                        com.arijit.budgettracker.utils.SyncManager.syncIfOnline(requireContext().applicationContext)
+                    } catch (_: Exception) {
+                        // ignore
+                    } finally {
+                        swipeRefreshLayout.isRefreshing = false
+                    }
+                }
             }
             
             // Setup date picker button
@@ -195,16 +129,47 @@ class HistoryFragment : Fragment() {
             apiService = RetrofitClient.getApiService(requireContext())
             
             // Setup adapter
-            historyAdapter = HistoryAdapter()
+            historyAdapter = HistoryAdapter().apply {
+                onExpenseEditClick = { expense ->
+                    val intent = Intent(requireContext(), com.arijit.budgettracker.AddTransActivity::class.java)
+                    intent.putExtra("expenseId", expense.id)
+                    expense.remoteId?.let { intent.putExtra("remoteId", it) }
+                    intent.putExtra("type", expense.type)
+                    intent.putExtra("category", expense.category)
+                    intent.putExtra("name", expense.name)
+                    intent.putExtra("amount", expense.amount)
+                    intent.putExtra("note", expense.note)
+                    intent.putExtra("timeStamp", expense.timeStamp)
+                    startActivity(intent)
+                }
+                onExpenseDeleteClick = { expense ->
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("Xóa giao dịch")
+                        .setMessage("Bạn có chắc muốn xóa giao dịch này?")
+                        .setPositiveButton("Xóa") { _, _ ->
+                            lifecycleScope.launch {
+                                try {
+                                    withContext(Dispatchers.IO) {
+                                        val db = com.arijit.budgettracker.db.ExpenseDatabase.getDatabase(requireContext().applicationContext)
+                                        db.expenseDao().deleteExpense(expense)
+                                    }
+                                    // Best-effort server delete.
+                                    com.arijit.budgettracker.utils.SyncManager.deleteExpenseIfOnline(requireContext().applicationContext, expense)
+                                } catch (_: Exception) {
+                                    // ignore
+                                }
+                            }
+                        }
+                        .setNegativeButton("Hủy", null)
+                        .show()
+                }
+            }
             val layoutManager = LinearLayoutManager(requireContext())
             containerRv.layoutManager = layoutManager
             containerRv.adapter = historyAdapter
-            
-            // Setup pagination scroll listener
-            setupPaginationListener(layoutManager)
 
-            // Load transactions from API
-            loadTransactionsFromAPI()
+            // Observe local DB so list updates immediately on add/edit/delete.
+            observeLocalDb()
             
             // Update month labels on first load
             val calendar = Calendar.getInstance()
@@ -227,14 +192,123 @@ class HistoryFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // Always reload to sync with any new data from AddExpenseActivity
-        loadTransactionsFromAPI()
+        // Reset any search/date filters when returning to History tab.
+        // (ViewPager keeps fragments alive; without this, filters "stick".)
+        if (hasInitialized) {
+            resetToDefaultState()
+        } else {
+            hasInitialized = true
+        }
+
+        // Best-effort sync, but UI is driven by local DB.
+        lifecycleScope.launch {
+            try {
+                com.arijit.budgettracker.utils.SyncManager.syncIfOnline(requireContext().applicationContext)
+            } catch (_: Exception) {
+                // ignore
+            }
+        }
+    }
+
+    private fun resetToDefaultState() {
+        searchJob?.cancel()
+        searchJob = null
+
+        selectedDate = System.currentTimeMillis()
+        isDateSelected = false
+        btnDatePicker.setImageResource(android.R.drawable.ic_menu_my_calendar)
+
+        // Clear search without triggering afterTextChanged cascade repeatedly.
+        etSearchTransaction.removeTextChangedListener(searchTextWatcher)
+        etSearchTransaction.setText("")
+        etSearchTransaction.addTextChangedListener(searchTextWatcher)
+
+        applyLocalFilters(keyword = "")
+
+        // Reset month labels + stats to current month.
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.DAY_OF_MONTH, 1)
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        updateMonthLabels(calendar.timeInMillis)
+        updateLocalMonthStats(allLocalExpenses)
+    }
+
+    private fun observeLocalDb() {
+        val db = com.arijit.budgettracker.db.ExpenseDatabase.getDatabase(requireContext().applicationContext)
+        val dao = db.expenseDao()
+        viewLifecycleOwner.lifecycleScope.launch {
+            dao.getAllExpensesFlow().collect { expenses ->
+                allLocalExpenses = expenses
+                applyLocalFilters(keyword = etSearchTransaction.text?.toString()?.trim().orEmpty())
+                updateLocalMonthStats(expenses)
+            }
+        }
+    }
+
+    private fun applyLocalFilters(keyword: String) {
+        val filtered = allLocalExpenses
+            .asSequence()
+            .filter { e ->
+                if (keyword.isBlank()) true
+                else {
+                    val k = keyword.lowercase()
+                    e.category.lowercase().contains(k) ||
+                        e.name.lowercase().contains(k) ||
+                        e.note.lowercase().contains(k)
+                }
+            }
+            .filter { e ->
+                if (!isDateSelected) true
+                else {
+                    val cal = Calendar.getInstance()
+                    cal.timeInMillis = selectedDate
+                    cal.set(Calendar.HOUR_OF_DAY, 0)
+                    cal.set(Calendar.MINUTE, 0)
+                    cal.set(Calendar.SECOND, 0)
+                    cal.set(Calendar.MILLISECOND, 0)
+                    val start = cal.timeInMillis
+                    val end = start + 24 * 60 * 60 * 1000
+                    e.timeStamp in start until end
+                }
+            }
+            .sortedByDescending { it.timeStamp }
+            .toList()
+
+        val grouped = groupExpensesByDate(filtered)
+        displayedTransactions = grouped
+        historyAdapter.submitList(grouped)
+    }
+
+    private fun updateLocalMonthStats(expenses: List<Expense>) {
+        val calendar = Calendar.getInstance()
+        val currentYear = calendar.get(Calendar.YEAR)
+        val currentMonth = calendar.get(Calendar.MONTH)
+
+        val monthIncome = expenses.asSequence()
+            .filter {
+                val c = Calendar.getInstance().apply { timeInMillis = it.timeStamp }
+                c.get(Calendar.YEAR) == currentYear && c.get(Calendar.MONTH) == currentMonth && it.type.equals("income", true)
+            }
+            .sumOf { it.amount }
+
+        val monthExpense = expenses.asSequence()
+            .filter {
+                val c = Calendar.getInstance().apply { timeInMillis = it.timeStamp }
+                c.get(Calendar.YEAR) == currentYear && c.get(Calendar.MONTH) == currentMonth && it.type.equals("expense", true)
+            }
+            .sumOf { it.amount }
+
+        tvMonthIncome.text = "${numberFormatter.format(monthIncome.toLong())} đ"
+        tvMonthExpense.text = "${numberFormatter.format(monthExpense.toLong())} đ"
+        tvMonthSavings.text = "${numberFormatter.format((monthIncome - monthExpense).toLong())} đ"
     }
 
     private fun groupExpensesByDate(expenses: List<Expense>): List<DailyExpense> {
         // Use cached formatter (thread-local to this fragment)
         return expenses
-            .groupBy { dateFormatter.format(Date(it.timeStamp * 1000)) }
+            .groupBy { dateFormatter.format(Date(it.timeStamp)) }
             .map { entry -> 
                 DailyExpense(
                     entry.key, 
@@ -244,196 +318,6 @@ class HistoryFragment : Fragment() {
             .sortedByDescending { dailyExpense ->
                 dailyExpense.expenses.firstOrNull()?.timeStamp ?: 0L
             }
-    }
-
-    private fun loadTransactionsFromAPI() {
-        lifecycleScope.launch {
-            try {
-                swipeRefreshLayout.isRefreshing = true
-                val response = apiService.getAllTransactions()
-                if (response.isSuccessful && response.body() != null) {
-                    allApiTransactions = response.body()!!
-                    currentPage = 1
-                    hasMorePages = true
-                    displayPagedTransactions(1)
-                    calculateAndUpdateStats(allApiTransactions)
-                } else {
-                    Log.e("HistoryFragment", "Failed to load transactions: ${response.message()}")
-                }
-            } catch (e: Exception) {
-                Log.e("HistoryFragment", "Load failed: ${e.message}", e)
-            } finally {
-                swipeRefreshLayout.isRefreshing = false
-            }
-        }
-    }
-
-    private fun setupPaginationListener(layoutManager: LinearLayoutManager) {
-        containerRv.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                
-                val totalItemCount = layoutManager.itemCount
-                val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
-                
-                // Load more khi cuộn tới 80% của danh sách
-                if (!isLoadingMore && hasMorePages && lastVisiblePosition >= totalItemCount - 10) {
-                    loadMoreTransactions()
-                }
-            }
-        })
-    }
-
-    private fun loadMoreTransactions() {
-        // Prevent race condition by double-checking
-        if (isLoadingMore || !hasMorePages || etSearchTransaction.text.toString().isNotEmpty()) {
-            return
-        }
-        
-        isLoadingMore = true
-        currentPage++
-        displayPagedTransactions(currentPage)
-    }
-
-    private fun displayPagedTransactions(page: Int) {
-        // Guard: prevent concurrent execution
-        if (isProcessing) {
-            Log.d("HistoryFragment", "Already processing, ignoring request for page $page")
-            if (page > 1) {
-                isLoadingMore = false  // Reset flag so next scroll can trigger
-            }
-            return
-        }
-        
-        lifecycleScope.launch {
-            try {
-                isProcessing = true
-                
-                // Offload heavy work to background thread
-                val result = withContext(Dispatchers.Default) {
-                    // Calculate pagination indices
-                    val startIndex = (page - 1) * pageSize
-                    val endIndex = minOf(page * pageSize, allApiTransactions.size)
-                    
-                    // Check if there are more pages
-                    hasMorePages = endIndex < allApiTransactions.size
-                    
-                    // Get paginated transactions
-                    val paginatedTransactions = allApiTransactions.subList(startIndex, endIndex)
-                    
-                    // Apply filters AND convert in single pass (reduce iterations)
-                    val expenses = if (isDateSelected) {
-                        // Create separate calendar instances to avoid object reuse bug
-                        val startOfDayCal = Calendar.getInstance().apply {
-                            timeInMillis = selectedDate
-                            set(Calendar.HOUR_OF_DAY, 0)
-                            set(Calendar.MINUTE, 0)
-                            set(Calendar.SECOND, 0)
-                        }
-                        val startOfDay = startOfDayCal.timeInMillis / 1000
-                        
-                        val endOfDayCal = Calendar.getInstance().apply {
-                            timeInMillis = selectedDate
-                            set(Calendar.HOUR_OF_DAY, 23)
-                            set(Calendar.MINUTE, 59)
-                            set(Calendar.SECOND, 59)
-                        }
-                        val endOfDay = endOfDayCal.timeInMillis / 1000
-                        
-                        // Filter AND map in one pass
-                        paginatedTransactions.filter { tx ->
-                            tx.timeStamp >= startOfDay && tx.timeStamp <= endOfDay
-                        }.map { tx ->
-                            Expense(
-                                id = tx.id.toInt(),
-                                amount = tx.amount.toDouble(),
-                                name = tx.name,
-                                category = tx.categoryName ?: tx.name,
-                                type = tx.type,
-                                timeStamp = tx.timeStamp,
-                                synced = true
-                            )
-                        }
-                    } else {
-                        // Convert without filter
-                        paginatedTransactions.map { tx ->
-                            Expense(
-                                id = tx.id.toInt(),
-                                amount = tx.amount.toDouble(),
-                                name = tx.name,
-                                category = tx.categoryName ?: tx.name,
-                                type = tx.type,
-                                timeStamp = tx.timeStamp,
-                                synced = true
-                            )
-                        }
-                    }
-                    
-                    // Group by date on background thread
-                    groupExpensesByDate(expenses)
-                }
-                
-                // Only update UI on main thread
-                withContext(Dispatchers.Main) {
-                    if (page == 1) {
-                        // First page: replace all
-                        displayedTransactions = result
-                        historyAdapter.submitList(result)
-                    } else {
-                        // Next pages: append (memory-efficient way)
-                        val newList = displayedTransactions.toMutableList().apply { addAll(result) }
-                        displayedTransactions = newList
-                        historyAdapter.submitList(newList)
-                    }
-                    isLoadingMore = false
-                    isProcessing = false
-                }
-            } catch (e: Exception) {
-                Log.e("HistoryFragment", "Pagination failed: ${e.message}", e)
-                isLoadingMore = false
-            }
-        }
-    }
-
-    private fun calculateAndUpdateStats(transactions: List<TransactionResponse>) {
-        lifecycleScope.launch {
-            val stats = withContext(Dispatchers.Default) {
-                val calendar = Calendar.getInstance()
-                val currentYear = calendar.get(Calendar.YEAR)
-                val currentMonth = calendar.get(Calendar.MONTH) + 1
-                
-                var income = 0.0
-                var expense = 0.0
-                
-                // Create single reusable Calendar instance
-                val txCalendar = Calendar.getInstance()
-                
-                // Single pass through transactions
-                for (tx in transactions) {
-                    // Reuse calendar instance for each transaction
-                    txCalendar.timeInMillis = tx.timeStamp * 1000
-                    val txYear = txCalendar.get(Calendar.YEAR)
-                    val txMonth = txCalendar.get(Calendar.MONTH) + 1
-                    
-                    if (txYear == currentYear && txMonth == currentMonth) {
-                        if (tx.type == "INCOME") {
-                            income += tx.amount
-                        } else if (tx.type == "EXPENSE") {
-                            expense += tx.amount
-                        }
-                    }
-                }
-                
-                Triple(income, expense, income - expense)
-            }
-            
-            // Update UI only
-            withContext(Dispatchers.Main) {
-                tvMonthIncome.text = "${numberFormatter.format(stats.first.toLong())} đ"
-                tvMonthExpense.text = "${numberFormatter.format(stats.second.toLong())} đ"
-                tvMonthSavings.text = "${numberFormatter.format(stats.third.toLong())} đ"
-            }
-        }
     }
 
     private fun showDatePicker() {
@@ -455,13 +339,8 @@ class HistoryFragment : Fragment() {
                 
                 // Update button icon to X
                 btnDatePicker.setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
-                
-                // Reset pagination and reload
-                currentPage = 1
-                hasMorePages = true
-                displayPagedTransactions(1)
-                
-                // Update statistics for the selected month
+
+                applyLocalFilters(keyword = etSearchTransaction.text?.toString()?.trim().orEmpty())
                 updateStatsForSelectedMonth()
             },
             year,
@@ -485,69 +364,44 @@ class HistoryFragment : Fragment() {
     }
 
     private fun updateStatsForSelectedMonth() {
-        lifecycleScope.launch {
-            val calendarSelected = Calendar.getInstance().apply { timeInMillis = selectedDate }
-            val selectedYear = calendarSelected.get(Calendar.YEAR)
-            val selectedMonth = calendarSelected.get(Calendar.MONTH) + 1
-            
-            val stats = withContext(Dispatchers.Default) {
-                var income = 0.0
-                var expense = 0.0
-                
-                // Create single reusable Calendar instance
-                val txCalendar = Calendar.getInstance()
-                
-                for (tx in allApiTransactions) {
-                    txCalendar.timeInMillis = tx.timeStamp * 1000
-                    val txYear = txCalendar.get(Calendar.YEAR)
-                    val txMonth = txCalendar.get(Calendar.MONTH) + 1
-                    
-                    if (txYear == selectedYear && txMonth == selectedMonth) {
-                        if (tx.type == "INCOME") {
-                            income += tx.amount
-                        } else if (tx.type == "EXPENSE") {
-                            expense += tx.amount
-                        }
-                    }
-                }
-                
-                Triple(income, expense, income - expense)
+        val calendarSelected = Calendar.getInstance().apply { timeInMillis = selectedDate }
+        val selectedYear = calendarSelected.get(Calendar.YEAR)
+        val selectedMonth = calendarSelected.get(Calendar.MONTH)
+
+        val monthIncome = allLocalExpenses.asSequence()
+            .filter {
+                val c = Calendar.getInstance().apply { timeInMillis = it.timeStamp }
+                c.get(Calendar.YEAR) == selectedYear && c.get(Calendar.MONTH) == selectedMonth && it.type.equals("income", true)
             }
-            
-            withContext(Dispatchers.Main) {
-                tvMonthIncome.text = "${numberFormatter.format(stats.first.toLong())} đ"
-                tvMonthExpense.text = "${numberFormatter.format(stats.second.toLong())} đ"
-                tvMonthSavings.text = "${numberFormatter.format(stats.third.toLong())} đ"
-                
-                // Update month labels with specific month and year
-                updateMonthLabels(selectedDate)
+            .sumOf { it.amount }
+
+        val monthExpense = allLocalExpenses.asSequence()
+            .filter {
+                val c = Calendar.getInstance().apply { timeInMillis = it.timeStamp }
+                c.get(Calendar.YEAR) == selectedYear && c.get(Calendar.MONTH) == selectedMonth && it.type.equals("expense", true)
             }
-        }
+            .sumOf { it.amount }
+
+        tvMonthIncome.text = "${numberFormatter.format(monthIncome.toLong())} đ"
+        tvMonthExpense.text = "${numberFormatter.format(monthExpense.toLong())} đ"
+        tvMonthSavings.text = "${numberFormatter.format((monthIncome - monthExpense).toLong())} đ"
+
+        updateMonthLabels(selectedDate)
     }
 
     private fun resetToCurrentMonth() {
-        // Cancel any pending search job
-        searchJob?.cancel()
-        searchJob = null
-        
         selectedDate = System.currentTimeMillis()
         isDateSelected = false
         
         // Update button icon back to calendar
         btnDatePicker.setImageResource(android.R.drawable.ic_menu_my_calendar)
-        
-        // Reset pagination and reload
-        currentPage = 1
-        hasMorePages = true
-        
+
         // Clear search without triggering afterTextChanged cascade
         etSearchTransaction.removeTextChangedListener(searchTextWatcher)
         etSearchTransaction.setText("")
         etSearchTransaction.addTextChangedListener(searchTextWatcher)
-        
-        displayPagedTransactions(1)
-        
-        // Reset stats to current month
-        calculateAndUpdateStats(allApiTransactions)
+
+        applyLocalFilters(keyword = "")
+        updateLocalMonthStats(allLocalExpenses)
     }
 }

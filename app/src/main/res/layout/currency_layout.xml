@@ -20,7 +20,7 @@
             android:textColor="@color/dark_green"
             android:fontFamily="@font/montserrat_regular"
             android:textSize="18sp"
-            android:text="₹ - INR" />
+            android:text="₫ - VND" />
 
         <TextView
             android:id="@+id/usd"
@@ -75,7 +75,7 @@
             android:layout_marginTop="20dp"
             android:fontFamily="@font/montserrat_regular"
             android:textSize="18sp"
-            android:text="€ - EUR" />
+            android:text="₫ - VND" />
 
     </LinearLayout>
 

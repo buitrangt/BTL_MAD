@@ -7,9 +7,10 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Expense::class], version = 4, exportSchema = false)
+@Database(entities = [Expense::class, Category::class], version = 8, exportSchema = false)
 abstract class ExpenseDatabase : RoomDatabase() {
     abstract fun expenseDao(): ExpenseDao
+    abstract fun categoryDao(): CategoryDao
 
     companion object {
         @Volatile
@@ -23,13 +24,56 @@ abstract class ExpenseDatabase : RoomDatabase() {
 
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE expenses ADD COLUMN type TEXT NOT NULL DEFAULT 'EXPENSE'")
+                db.execSQL("ALTER TABLE expenses ADD COLUMN note TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE expenses ADD COLUMN type TEXT NOT NULL DEFAULT 'expense'")
             }
         }
 
         private val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE expenses ADD COLUMN name TEXT NOT NULL DEFAULT 'Transaction'")
+                db.execSQL("""
+                    CREATE TABLE categories (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        icon TEXT NOT NULL DEFAULT '',
+                        type TEXT NOT NULL DEFAULT 'both'
+                    )
+                """)
+                // Empty - no default categories inserted
+            }
+        }
+
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add new columns to categories table
+                db.execSQL("ALTER TABLE categories ADD COLUMN description TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE categories ADD COLUMN createdAt INTEGER NOT NULL DEFAULT ${System.currentTimeMillis()}")
+            }
+        }
+
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE expenses ADD COLUMN localCreatedAt INTEGER NOT NULL DEFAULT 0")
+                // Best-effort backfill so existing items keep reasonable ordering.
+                db.execSQL("UPDATE expenses SET localCreatedAt = timestamp WHERE localCreatedAt = 0")
+            }
+        }
+
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Keep "recent" stable: push server-pulled rows down.
+                // Heuristic: rows that look like server mirrors usually have empty note and name == category.
+                db.execSQL(
+                    "UPDATE expenses " +
+                        "SET localCreatedAt = 0 " +
+                        "WHERE synced = 1 AND (note IS NULL OR note = '') AND name = category"
+                )
+            }
+        }
+
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE expenses ADD COLUMN remoteId INTEGER")
             }
         }
 
@@ -40,7 +84,17 @@ abstract class ExpenseDatabase : RoomDatabase() {
                     ExpenseDatabase::class.java,
                     "expense_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(
+                    MIGRATION_1_2,
+                    MIGRATION_2_3,
+                    MIGRATION_3_4,
+                    MIGRATION_4_5,
+                    MIGRATION_5_6,
+                    MIGRATION_6_7,
+                    MIGRATION_7_8
+                )
+                // Dev-safety: if a user runs an APK with a mismatched schema, reset local DB
+                // instead of failing silently and leaving the UI stale.
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance

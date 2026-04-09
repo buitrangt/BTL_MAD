@@ -25,4 +25,10 @@
 
         <item name="android:importantForAutofill">no</item>
     </style>
+
+    <!-- Base style for ExpenseTracker components -->
+    <style name="ExpenseTracker" />
+
+    <!-- Base style for SelectDate components -->
+    <style name="SelectDate" />
 </resources>

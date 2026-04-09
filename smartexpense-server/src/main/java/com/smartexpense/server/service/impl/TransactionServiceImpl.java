@@ -41,7 +41,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .name(request.getName())
                 .amount(request.getAmount())
                 .category(category)
-                .type(request.getType())
+                .type(normalizeType(request.getType()))
                 .note(request.getNote())
                 .timeStamp(request.getTimeStamp())
                 .user(user)
@@ -50,13 +50,27 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    public TransactionResponse updateTransaction(String userEmail, Long transactionId, TransactionRequest request) {
+        User user = findUser(userEmail);
+        Transaction transaction = transactionRepository.findByIdAndUserId(transactionId, user.getId())
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+
+        Category category = findCategory(request.getCategoryId());
+        transaction.setName(request.getName());
+        transaction.setAmount(request.getAmount());
+        transaction.setCategory(category);
+        transaction.setType(normalizeType(request.getType()));
+        transaction.setNote(request.getNote());
+        transaction.setTimeStamp(request.getTimeStamp());
+
+        return toResponse(transactionRepository.save(transaction));
+    }
+
+    @Override
     public void deleteTransaction(String userEmail, Long transactionId) {
         User user = findUser(userEmail);
-        Transaction transaction = transactionRepository.findById(transactionId)
+        Transaction transaction = transactionRepository.findByIdAndUserId(transactionId, user.getId())
                 .orElseThrow(() -> new RuntimeException("Transaction not found"));
-        if (!transaction.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Unauthorized");
-        }
         transactionRepository.delete(transaction);
     }
 
@@ -71,7 +85,7 @@ public class TransactionServiceImpl implements TransactionService {
                     .name(request.getName())
                     .amount(request.getAmount())
                     .category(category)
-                    .type(request.getType())
+                    .type(normalizeType(request.getType()))
                     .note(request.getNote())
                     .timeStamp(request.getTimeStamp())
                     .user(user)
@@ -89,6 +103,14 @@ public class TransactionServiceImpl implements TransactionService {
     private Category findCategory(Long categoryId) {
         if (categoryId == null) return null;
         return categoryRepository.findById(categoryId).orElse(null);
+    }
+
+    private String normalizeType(String type) {
+        if (type == null) {
+            return "expense";
+        }
+        String normalized = type.trim().toLowerCase();
+        return normalized.isEmpty() ? "expense" : normalized;
     }
 
     @Override

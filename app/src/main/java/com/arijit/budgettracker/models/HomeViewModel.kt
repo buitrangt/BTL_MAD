@@ -8,14 +8,18 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.db.ExpenseDatabase
-import kotlinx.coroutines.flow.filter
+import com.arijit.budgettracker.utils.SyncManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Calendar
-import kotlin.math.exp
+import java.util.TimeZone
+import kotlin.math.max
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val expenseDao = ExpenseDatabase.Companion.getDatabase(application).expenseDao()
-    val latestExpenses: LiveData<List<Expense>> = expenseDao.getLatest8Expenses()
+    // Use a stable in-memory sort to avoid "LIMIT + mixed seconds/millis" glitches.
+    private val _recentExpenses = MutableLiveData<List<Expense>>(emptyList())
+    val recentExpenses: LiveData<List<Expense>> = _recentExpenses
     val allExpenses: LiveData<List<Expense>> = expenseDao.getAllExpensesFlow().asLiveData()
     
     private val _todayAmount = MutableLiveData<Double>()
@@ -34,51 +38,97 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val monthSavings: LiveData<Double> = _monthSavings
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             expenseDao.getAllExpensesFlow().collect { expenses ->
                 val now = System.currentTimeMillis()
                 val startOfDay = getStartOfDay(now)
+                val endOfDay = startOfDay + (24 * 60 * 60 * 1000) // +1 day
                 val startOfWeek = getStartOfWeek(now)
+                val endOfWeek = startOfWeek + (7 * 24 * 60 * 60 * 1000) // +7 days
                 val startOfMonth = getStartOfMonth(now)
+                
+                // Calculate end of month (start of next month)
+                val nextMonthCal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok")).apply {
+                    timeInMillis = startOfMonth
+                    add(Calendar.MONTH, 1)
+                }
+                val endOfMonth = nextMonthCal.timeInMillis
 
-                // Note: timeStamp in DB is in SECONDS, need to convert to milliseconds
-                _todayAmount.value = expenses.filter { (it.timeStamp * 1000) >= startOfDay }.sumOf { it.amount }
-                _weekAmount.value = expenses.filter { (it.timeStamp * 1000) >= startOfWeek }.sumOf { it.amount }
-                _monthAmount.value = expenses.filter { (it.timeStamp * 1000) >= startOfMonth }.sumOf { it.amount }
+                // Some existing data may store timestamps in seconds; normalize to millis.
+                fun tsMillis(ts: Long): Long = if (ts in 1..9_999_999_999L) ts * 1000 else ts
+
+                val recent = expenses
+                    .sortedByDescending { e ->
+                        max(tsMillis(e.localCreatedAt), tsMillis(e.timeStamp))
+                    }
+                    .take(8)
+                _recentExpenses.postValue(recent)
+
+                // Home cards are "spending" cards, so only count expense type.
+                _todayAmount.postValue(
+                    expenses
+                    .filter { it.type == "expense" }
+                    .filter { tsMillis(it.timeStamp) >= startOfDay && tsMillis(it.timeStamp) < endOfDay }
+                    .sumOf { it.amount }
+                )
+                _weekAmount.postValue(
+                    expenses
+                    .filter { it.type == "expense" }
+                    .filter { tsMillis(it.timeStamp) >= startOfWeek && tsMillis(it.timeStamp) < endOfWeek }
+                    .sumOf { it.amount }
+                )
+                _monthAmount.postValue(
+                    expenses
+                    .filter { it.type == "expense" }
+                    .filter { tsMillis(it.timeStamp) >= startOfMonth && tsMillis(it.timeStamp) < endOfMonth }
+                    .sumOf { it.amount }
+                )
                 
-                // Tính chi tiêu tháng (chỉ EXPENSE)
+                // Tính chi tiêu tháng (chỉ expense)
                 val monthlyExpenseAmount = expenses
-                    .filter { (it.timeStamp * 1000) >= startOfMonth && it.type == "EXPENSE" }
+                    .filter { it.type == "expense" }
+                    .filter { tsMillis(it.timeStamp) >= startOfMonth && tsMillis(it.timeStamp) < endOfMonth }
                     .sumOf { it.amount }
-                _monthExpense.value = monthlyExpenseAmount
+                _monthExpense.postValue(monthlyExpenseAmount)
                 
-                // Tính thu nhập tháng (chỉ INCOME)
+                // Tính thu nhập tháng (chỉ income)
                 val monthlyIncomeAmount = expenses
-                    .filter { (it.timeStamp * 1000) >= startOfMonth && it.type == "INCOME" }
+                    .filter { it.type == "income" }
+                    .filter { tsMillis(it.timeStamp) >= startOfMonth && tsMillis(it.timeStamp) < endOfMonth }
                     .sumOf { it.amount }
-                _monthIncome.value = monthlyIncomeAmount
+                _monthIncome.postValue(monthlyIncomeAmount)
                 
                 // Tiết kiệm = Thu nhập - Chi tiêu
-                _monthSavings.value = monthlyIncomeAmount - monthlyExpenseAmount
+                _monthSavings.postValue(monthlyIncomeAmount - monthlyExpenseAmount)
             }
         }
+
+        // Do not override local calculations with server stats on Home.
     }
 
     private fun getStartOfDay(now: Long): Long {
-        val cal = Calendar.getInstance().apply {
+        val bangkok = TimeZone.getTimeZone("Asia/Bangkok")
+        val cal = Calendar.getInstance(bangkok).apply {
             timeInMillis = now
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
+        // Convert to milliseconds from epoch (accounts for timezone offset)
         return cal.timeInMillis
     }
 
     private fun getStartOfWeek(now: Long): Long {
-        val cal = Calendar.getInstance().apply {
+        val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok")).apply {
             timeInMillis = now
-            set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+            firstDayOfWeek = Calendar.MONDAY
+            // Get day of week (1=Sunday, 2=Monday, ..., 7=Saturday)
+            val dayOfWeek = get(Calendar.DAY_OF_WEEK)
+            // Calculate days to subtract to get to Monday
+            // If Monday (2): 0 days, If Sunday (1): 6 days back, etc.
+            val daysToSubtract = (dayOfWeek + 5) % 7
+            add(Calendar.DAY_OF_MONTH, -daysToSubtract)
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
@@ -88,7 +138,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun getStartOfMonth(now: Long): Long {
-        val cal = Calendar.getInstance().apply {
+        val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok")).apply {
             timeInMillis = now
             set(Calendar.DAY_OF_MONTH, 1)
             set(Calendar.HOUR_OF_DAY, 0)
@@ -105,11 +155,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val expenses = allExpenses.value ?: emptyList()
         
         val income = expenses
-            .filter { (it.timeStamp * 1000) >= monthStart && (it.timeStamp * 1000) <= monthEnd && it.type == "INCOME" }
+            .filter { it.timeStamp >= monthStart && it.timeStamp <= monthEnd && it.type == "income" }
             .sumOf { it.amount }
         
         val expense = expenses
-            .filter { (it.timeStamp * 1000) >= monthStart && (it.timeStamp * 1000) <= monthEnd && it.type == "EXPENSE" }
+            .filter { it.timeStamp >= monthStart && it.timeStamp <= monthEnd && it.type == "expense" }
             .sumOf { it.amount }
         
         val savings = income - expense
@@ -133,12 +183,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteExpense(expense: Expense) {
         viewModelScope.launch {
             expenseDao.deleteExpense(expense)
+            SyncManager.deleteExpenseIfOnline(getApplication(), expense)
         }
     }
 
     fun updateExpense(expense: Expense) {
         viewModelScope.launch {
             expenseDao.updateExpense(expense)
+            SyncManager.syncIfOnline(getApplication())
         }
     }
 }

@@ -26,7 +26,25 @@
         android:theme="@style/Theme.BudgetTracker"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".FinChatActivity"
+            android:name=".DeleteCategoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".DeleteTransDialogActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SelectDateActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SelectCategory"
+            android:exported="false" />
+        <activity
+            android:name=".utils.SelectCategoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AddTransActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AddCategoryActivity"
             android:exported="false" />
         <activity
             android:name=".VerifyOtpActivity"
@@ -43,6 +61,9 @@
         <activity
             android:name=".UserProfileActivity"
             android:exported="false" />
+        <activity
+            android:name=".FinChatActivity"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -54,9 +75,6 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <activity
-            android:name=".SettingsActivity"
-            android:exported="false" />
         <activity
             android:name=".AddExpenseActivity"
             android:exported="false" />
