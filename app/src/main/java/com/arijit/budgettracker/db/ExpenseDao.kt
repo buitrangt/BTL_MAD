@@ -14,6 +14,9 @@ interface ExpenseDao {
     suspend fun insertExpense(expense: Expense)
 
     @Insert
+    suspend fun insertExpenseAndGetId(expense: Expense): Long
+
+    @Insert
     suspend fun insertExpenses(expenses: List<Expense>)
 
     @Update

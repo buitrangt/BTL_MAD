@@ -4,37 +4,52 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F6F6F6"
+    android:background="#F2F4F8"
     android:orientation="vertical"
-    android:paddingStart="12dp"
-    android:paddingTop="8dp"
-    android:paddingEnd="12dp"
+    android:paddingHorizontal="20dp"
+    android:paddingTop="16dp"
     tools:context=".fragments.HistoryFragment">
 
-    <!-- Search Bar with Calendar and Reset Buttons -->
+    <!-- ============ HEADER TITLE ============ -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/montserrat_bold"
+        android:text="Lịch sử giao dịch"
+        android:textColor="#1A2235"
+        android:textSize="22sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:fontFamily="@font/montserrat_regular"
+        android:text="Theo dõi các khoản chi và thu của bạn"
+        android:textColor="#8E96A3"
+        android:textSize="12sp" />
+
+    <!-- ============ SEARCH BAR + DATE PICKER ============ -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginTop="6dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_height="52dp"
+        android:layout_marginTop="14dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-        <!-- Search Input -->
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="52dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_search_rounded"
+            android:background="@drawable/bg_search_modern"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp">
+            android:paddingHorizontal="16dp">
 
             <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
                 android:src="@android:drawable/ic_menu_search"
-                app:tint="#A8A8A8" />
+                app:tint="#8E96A3" />
 
             <EditText
                 android:id="@+id/etSearchTransaction"
@@ -43,181 +58,237 @@
                 android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:background="@null"
+                android:fontFamily="@font/montserrat_regular"
                 android:hint="Tìm kiếm giao dịch..."
-                android:textColor="#222222"
-                android:textColorHint="#B2B2B2"
+                android:textColor="#1A2235"
+                android:textColorHint="#B2B8C2"
                 android:textSize="13sp" />
         </LinearLayout>
 
-        <!-- Calendar/Clear Date Button (Dynamic Icon) -->
         <ImageButton
             android:id="@+id/btnDatePicker"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="8dp"
-            android:src="@android:drawable/ic_menu_my_calendar"
-            android:background="@drawable/bg_search_rounded"
-            android:scaleType="centerInside"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="10dp"
+            android:background="@drawable/bg_search_modern"
             android:contentDescription="Chọn ngày"
-            app:tint="@color/primary_green" />
-
+            android:scaleType="centerInside"
+            android:src="@android:drawable/ic_menu_my_calendar"
+            app:tint="#10B981" />
     </LinearLayout>
 
-    <!-- Summary Cards (Horizontal Scroll) -->
-    <HorizontalScrollView
+    <!-- ============ FILTER CARDS (3 equal columns) ============ -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:scrollbars="none">
+        android:layout_marginTop="16dp"
+        android:orientation="horizontal"
+        android:weightSum="3">
 
+        <!-- ===== EXPENSE CARD (default selected) ===== -->
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:id="@+id/cardExpense"
+            android:layout_width="0dp"
+            android:layout_height="118dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_card_filter_selected"
+            android:clickable="true"
+            android:focusable="true"
+            android:orientation="vertical"
+            android:padding="12dp">
 
-            <!-- Expense Card -->
-            <LinearLayout
-                android:layout_width="150dp"
-                android:layout_height="108dp"
-                android:background="@drawable/bg_card_green"
-                android:orientation="vertical"
-                android:padding="12dp">
+            <FrameLayout
+                android:id="@+id/iconExpenseWrap"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@drawable/bg_icon_circle_white">
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                <ImageView
+                    android:id="@+id/iconExpense"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_gravity="center"
+                    android:src="@android:drawable/ic_input_delete"
+                    app:tint="#FFFFFF" />
+            </FrameLayout>
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Chi tiêu"
-                        android:textColor="#FFFFFF"
-                        android:textSize="12sp" />
+            <TextView
+                android:id="@+id/tvCardExpenseTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/montserrat_bold"
+                android:text="Chi tiêu"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp" />
 
-                    <TextView
-                        android:id="@+id/tvMonthLabelExpense"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Tháng này"
-                        android:textColor="#FFFFFF"
-                        android:textSize="12sp" />
-                </LinearLayout>
+            <TextView
+                android:id="@+id/tvMonthLabelExpense"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_regular"
+                android:text="Tháng này"
+                android:textColor="#FFFFFF"
+                android:textSize="9sp" />
 
-                <TextView
-                    android:id="@+id/tvMonthExpense"
-                    android:layout_width="126dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="0 đ"
-                    android:textColor="#FFFFFF"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:maxLines="2"
-                    android:ellipsize="end" />
-            </LinearLayout>
-
-            <!-- Income Card -->
-            <LinearLayout
-                android:layout_width="150dp"
-                android:layout_height="108dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_card_white"
-                android:orientation="vertical"
-                android:padding="12dp">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Thu nhập"
-                        android:textColor="#8D8D8D"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/tvMonthLabelIncome"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Tháng này"
-                        android:textColor="#8D8D8D"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tvMonthIncome"
-                    android:layout_width="126dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="0 đ"
-                    android:textColor="#222222"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:maxLines="2"
-                    android:ellipsize="end" />
-            </LinearLayout>
-
-            <!-- Savings Card -->
-            <LinearLayout
-                android:layout_width="150dp"
-                android:layout_height="108dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_card_white"
-                android:orientation="vertical"
-                android:padding="12dp">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Tiết kiệm"
-                        android:textColor="#8D8D8D"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/tvMonthLabelSavings"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Tháng này"
-                        android:textColor="#8D8D8D"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tvMonthSavings"
-                    android:layout_width="126dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="0 đ"
-                    android:textColor="#18C58F"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:maxLines="2"
-                    android:ellipsize="end" />
-            </LinearLayout>
+            <TextView
+                android:id="@+id/tvMonthExpense"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/montserrat_bold"
+                android:maxLines="1"
+                android:text="0đ"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
         </LinearLayout>
-    </HorizontalScrollView>
 
-    <!-- Transaction History List with Pull-to-Refresh -->
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipeRefreshLayout"
+        <!-- ===== INCOME CARD ===== -->
+        <LinearLayout
+            android:id="@+id/cardIncome"
+            android:layout_width="0dp"
+            android:layout_height="118dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_card_filter_unselected"
+            android:clickable="true"
+            android:focusable="true"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <FrameLayout
+                android:id="@+id/iconIncomeWrap"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@drawable/bg_icon_circle_green">
+
+                <ImageView
+                    android:id="@+id/iconIncome"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_gravity="center"
+                    android:src="@android:drawable/ic_input_add"
+                    app:tint="#10B981" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tvCardIncomeTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/montserrat_bold"
+                android:text="Thu nhập"
+                android:textColor="#1A2235"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvMonthLabelIncome"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_regular"
+                android:text="Tháng này"
+                android:textColor="#8E96A3"
+                android:textSize="9sp" />
+
+            <TextView
+                android:id="@+id/tvMonthIncome"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/montserrat_bold"
+                android:maxLines="1"
+                android:text="0đ"
+                android:textColor="#1A2235"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- ===== SAVINGS CARD ===== -->
+        <LinearLayout
+            android:id="@+id/cardSavings"
+            android:layout_width="0dp"
+            android:layout_height="118dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_card_filter_unselected"
+            android:clickable="true"
+            android:focusable="true"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <FrameLayout
+                android:id="@+id/iconSavingsWrap"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@drawable/bg_icon_circle_blue">
+
+                <ImageView
+                    android:id="@+id/iconSavings"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_gravity="center"
+                    android:src="@android:drawable/ic_menu_save"
+                    app:tint="#1976D2" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tvCardSavingsTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/montserrat_bold"
+                android:text="Tiết kiệm"
+                android:textColor="#1A2235"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvMonthLabelSavings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_regular"
+                android:text="Tháng này"
+                android:textColor="#8E96A3"
+                android:textSize="9sp" />
+
+            <TextView
+                android:id="@+id/tvMonthSavings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/montserrat_bold"
+                android:maxLines="1"
+                android:text="0đ"
+                android:textColor="#18C58F"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ============ TRANSACTION LIST ============ -->
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginTop="18dp"
         android:layout_weight="1"
-        android:layout_marginTop="12dp">
-        
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvHistory"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="0dp">
+
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefreshLayout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-        
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            android:layout_height="match_parent">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvHistory"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingTop="6dp"
+                android:paddingBottom="110dp" />
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+    </androidx.cardview.widget.CardView>
 
 </LinearLayout>

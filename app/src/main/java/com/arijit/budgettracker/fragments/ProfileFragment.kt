@@ -6,15 +6,25 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.arijit.budgettracker.AccountSettingActivity
 import com.arijit.budgettracker.LoginActivity
 import com.arijit.budgettracker.R
 import com.arijit.budgettracker.models.ProfileViewModel
+import com.arijit.budgettracker.utils.CurrencyPrefs
 import com.arijit.budgettracker.utils.TokenManager
 import com.arijit.budgettracker.utils.Vibration
 
 class ProfileFragment : Fragment() {
+    private lateinit var vm: ProfileViewModel
+
+    override fun onResume() {
+        super.onResume()
+        if (::vm.isInitialized) vm.loadStats()
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -25,13 +35,33 @@ class ProfileFragment : Fragment() {
         val tvUserName = view.findViewById<TextView>(R.id.tvUserName)
         tvUserName.text = TokenManager.getName(requireContext())?.takeIf { it.isNotBlank() } ?: "Người dùng"
 
+        val tvUserEmail = view.findViewById<TextView>(R.id.tvUserEmail)
+        tvUserEmail.text = TokenManager.getEmail(requireContext()) ?: ""
+
         val tvBalance = view.findViewById<TextView>(R.id.tvBalance)
         val tvSpent = view.findViewById<TextView>(R.id.tvSpent)
         val btnLogout = view.findViewById<View>(R.id.btnLogout)
 
-        val vm = ViewModelProvider(this)[ProfileViewModel::class.java]
-        vm.balance.observe(viewLifecycleOwner) { tvBalance.text = "₫%.2f".format(it) }
-        vm.totalExpense.observe(viewLifecycleOwner) { tvSpent.text = "₫%.2f".format(it) }
+        vm = ViewModelProvider(this)[ProfileViewModel::class.java]
+        vm.balance.observe(viewLifecycleOwner) { tvBalance.text = CurrencyPrefs.format(it) }
+        vm.totalExpense.observe(viewLifecycleOwner) { tvSpent.text = CurrencyPrefs.format(it) }
+
+        // Account settings - opens AccountSettingActivity
+        view.findViewById<View>(R.id.itemAccount).setOnClickListener {
+            Vibration.vibrate(requireContext(), 50)
+            startActivity(Intent(requireContext(), AccountSettingActivity::class.java))
+        }
+
+        // Currency, Notification, Theme - placeholders (locked to VND, no theme switch yet)
+        view.findViewById<View>(R.id.itemCurrency).setOnClickListener {
+            Toast.makeText(requireContext(), "Đơn vị tiền cố định: VND (₫)", Toast.LENGTH_SHORT).show()
+        }
+        view.findViewById<View>(R.id.itemNotification).setOnClickListener {
+            Toast.makeText(requireContext(), "Tính năng đang phát triển", Toast.LENGTH_SHORT).show()
+        }
+        view.findViewById<View>(R.id.itemTheme).setOnClickListener {
+            Toast.makeText(requireContext(), "Tính năng đang phát triển", Toast.LENGTH_SHORT).show()
+        }
 
         btnLogout.setOnClickListener {
             Vibration.vibrate(requireContext(), 50)

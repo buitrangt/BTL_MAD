@@ -1,17 +1,27 @@
 package com.arijit.budgettracker
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
+import com.arijit.budgettracker.db.ExpenseDatabase
+import com.arijit.budgettracker.db.SmsTemplate
+import com.arijit.budgettracker.sms.SmsNotificationHelper
 import com.arijit.budgettracker.utils.SyncManager
 import com.arijit.budgettracker.utils.Vibration
 import com.arijit.budgettracker.utils.ViewPagerAdapter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import android.widget.ImageButton
 import androidx.core.widget.ImageViewCompat
 
@@ -78,6 +88,82 @@ class MainActivity : BaseActivity() {
         lifecycleScope.launch {
             SyncManager.syncIfOnline(applicationContext)
         }
+
+        // Request SMS + notification permissions
+        requestSmsPermissions()
+
+        // Setup notification channel
+        SmsNotificationHelper.createChannel(this)
+
+        // Seed default SMS templates
+        lifecycleScope.launch(Dispatchers.IO) { seedSmsTemplates() }
+    }
+
+    private fun requestSmsPermissions() {
+        val perms = mutableListOf<String>()
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS)
+            != PackageManager.PERMISSION_GRANTED) perms.add(Manifest.permission.RECEIVE_SMS)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
+            != PackageManager.PERMISSION_GRANTED) perms.add(Manifest.permission.READ_SMS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) perms.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        if (perms.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, perms.toTypedArray(), 1001)
+        }
+    }
+
+    private suspend fun seedSmsTemplates() {
+        val dao = ExpenseDatabase.getDatabase(this).smsTemplateDao()
+        val existing = dao.getActiveTemplates()
+        if (existing.isNotEmpty()) return
+
+        val templates = listOf(
+            SmsTemplate(
+                id = 1L,
+                senderPattern = "Vietcombank",
+                amountRegex = """([0-9]{1,3}(?:[.,][0-9]{3})+)\s*(?:VND|VNĐ|đ)?""",
+                type = "DEBIT",
+                bankName = "Vietcombank"
+            ),
+            SmsTemplate(
+                id = 2L,
+                senderPattern = "Techcombank",
+                amountRegex = """([0-9]{1,3}(?:[.,][0-9]{3})+)\s*(?:VND|VNĐ|đ)?""",
+                type = "DEBIT",
+                bankName = "Techcombank"
+            ),
+            SmsTemplate(
+                id = 3L,
+                senderPattern = "MBBank",
+                amountRegex = """([0-9]{1,3}(?:[.,][0-9]{3})+)\s*(?:VND|VNĐ|đ)?""",
+                type = "DEBIT",
+                bankName = "MB Bank"
+            ),
+            SmsTemplate(
+                id = 4L,
+                senderPattern = "BIDV",
+                amountRegex = """([0-9]{1,3}(?:[.,][0-9]{3})+)\s*(?:VND|VNĐ|đ)?""",
+                type = "DEBIT",
+                bankName = "BIDV"
+            ),
+            SmsTemplate(
+                id = 5L,
+                senderPattern = "VPBank",
+                amountRegex = """([0-9]{1,3}(?:[.,][0-9]{3})+)\s*(?:VND|VNĐ|đ)?""",
+                type = "DEBIT",
+                bankName = "VPBank"
+            ),
+            SmsTemplate(
+                id = 6L,
+                senderPattern = "TEST",
+                amountRegex = """([0-9]{1,3}(?:[.,][0-9]{3})+)\s*(?:VND|VNĐ|đ)?""",
+                type = "DEBIT",
+                bankName = "Test Bank"
+            )
+        )
+        dao.upsertAll(templates)
     }
 
     fun navigateToHistory() {

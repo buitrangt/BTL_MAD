@@ -1,297 +1,288 @@
 package com.arijit.budgettracker.fragments
 
 import android.graphics.Color
-import android.graphics.Typeface
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.arijit.budgettracker.R
-import com.arijit.budgettracker.db.Expense
+import com.arijit.budgettracker.api.CategoryStat
+import com.arijit.budgettracker.api.WeeklyOverviewResponse
 import com.arijit.budgettracker.models.StatsViewModel
-import com.arijit.budgettracker.utils.RoundedBarChartRenderer
 import com.arijit.budgettracker.utils.CurrencyPrefs
-import com.github.mikephil.charting.animation.Easing
-import com.github.mikephil.charting.charts.BarChart
+import com.arijit.budgettracker.utils.SyncManager
+import kotlinx.coroutines.launch
 import com.github.mikephil.charting.charts.PieChart
-import com.github.mikephil.charting.components.Legend
-import com.github.mikephil.charting.components.XAxis
-import com.github.mikephil.charting.components.YAxis
-import com.github.mikephil.charting.data.BarData
-import com.github.mikephil.charting.data.BarDataSet
-import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
-import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
-import com.github.mikephil.charting.utils.ColorTemplate
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
 class StatsFragment : Fragment() {
-    private lateinit var barChart: BarChart
-    private lateinit var pieChart: PieChart
-    private lateinit var mostSpentTxt: TextView
     private lateinit var viewModel: StatsViewModel
-    private var lastExpenses: List<Expense> = emptyList()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
+    private lateinit var totalAmount: TextView
+    private lateinit var badgePercent: TextView
+    private lateinit var barChartContainer: LinearLayout
+    private lateinit var weekLabelsContainer: LinearLayout
+    private lateinit var pieChart: PieChart
+    private lateinit var legendContainer: LinearLayout
+    private lateinit var categoryList: LinearLayout
+
+    private val CHART_COLORS = intArrayOf(
+        Color.parseColor("#1A8754"),
+        Color.parseColor("#E53935"),
+        Color.parseColor("#1976D2"),
+        Color.parseColor("#FF9800"),
+        Color.parseColor("#9C27B0"),
+        Color.parseColor("#00BCD4"),
+        Color.parseColor("#795548"),
+        Color.parseColor("#607D8B")
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val view = inflater.inflate(R.layout.fragment_stats, container, false)
-        barChart = view.findViewById(R.id.daily_expense)
-        barChart.setRenderer(
-            RoundedBarChartRenderer(barChart, barChart.animator, barChart.viewPortHandler)
-        )
+
+        totalAmount = view.findViewById(R.id.total_amount)
+        badgePercent = view.findViewById(R.id.badge_percent)
+        barChartContainer = view.findViewById(R.id.bar_chart_container)
+        weekLabelsContainer = view.findViewById(R.id.week_labels_container)
         pieChart = view.findViewById(R.id.pie_chart)
-        mostSpentTxt = view.findViewById(R.id.most_spent_txt)
+        legendContainer = view.findViewById(R.id.legend_container)
+        categoryList = view.findViewById(R.id.category_list)
+
         viewModel = ViewModelProvider(this)[StatsViewModel::class.java]
-        
-        viewModel.allExpenses.observe(viewLifecycleOwner) { expenses ->
-            if (expenses != null) {
-                lastExpenses = expenses
-                // Move heavy operations to background thread
-                lifecycleScope.launch {
-                    loadBarChart(expenses)
-                    showMostSpentDayThisMonth(expenses)
-                    loadCategoryPieChart(expenses)
-                }
+
+        // "Xem tất cả" → switch to History tab
+        view.findViewById<View>(R.id.view_all).setOnClickListener {
+            (activity as? com.arijit.budgettracker.MainActivity)?.navigateToHistory()
+        }
+
+        viewModel.weeklyOverview.observe(viewLifecycleOwner) { data ->
+            if (data != null) renderAll(data)
+        }
+
+        viewModel.error.observe(viewLifecycleOwner) { err ->
+            if (err != null) {
+                totalAmount.text = err
             }
         }
+
+        viewModel.loadWeeklyOverview()
 
         return view
     }
 
-    private suspend fun loadBarChart(expenses: List<Expense>) {
-        // Perform heavy calculations in background
-        val chartData = withContext(Dispatchers.Default) {
-            val calendar = Calendar.getInstance()
-            val dateFormat = SimpleDateFormat("dd MMM", Locale.getDefault())
-            val dayFormat = SimpleDateFormat("EEE", Locale.getDefault())
+    override fun onResume() {
+        super.onResume()
+        // Push any pending local changes (e.g. from SMS receiver) and reload from server
+        lifecycleScope.launch {
+            SyncManager.syncIfOnline(requireContext().applicationContext)
+            viewModel.loadWeeklyOverview()
+        }
+    }
 
-            val last7DaysLabels = mutableListOf<String>()
-            val dailyTotals = LinkedHashMap<String, Float>()
-            val weekDayLabels = mutableListOf<String>()
+    private fun renderAll(data: WeeklyOverviewResponse) {
+        // Total amount
+        totalAmount.text = CurrencyPrefs.format(data.totalAmount)
 
-            // Initialize 0 for all 7 days
-            for (i in 6 downTo 0) {
-                calendar.timeInMillis = System.currentTimeMillis()
-                calendar.add(Calendar.DAY_OF_YEAR, -i)
-                val label = dateFormat.format(calendar.time)
-                last7DaysLabels.add(label)
-                dailyTotals[label] = 0f
-                
-                val weekDay = dayFormat.format(calendar.time)
-                weekDayLabels.add(weekDay)
+        // Badge percent
+        val pct = data.percentChange
+        if (pct >= 0) {
+            badgePercent.text = "↗ +${String.format("%.1f", pct)}%"
+            badgePercent.setTextColor(Color.parseColor("#E53935"))
+            badgePercent.setBackgroundResource(R.drawable.bg_badge_percent)
+        } else {
+            badgePercent.text = "↘ ${String.format("%.1f", pct)}%"
+            badgePercent.setTextColor(Color.parseColor("#1A8754"))
+            badgePercent.setBackgroundResource(R.drawable.bg_badge_percent_green)
+        }
+
+        // Bar chart
+        renderBarChart(data.dailyBreakdown)
+
+        // Pie chart
+        renderPieChart(data.categoryBreakdown, data.totalAmount)
+
+        // Category list
+        renderCategoryList(data.categoryBreakdown)
+    }
+
+    private fun renderBarChart(daily: Map<String, Double>) {
+        barChartContainer.removeAllViews()
+        weekLabelsContainer.removeAllViews()
+
+        val maxVal = daily.values.maxOrNull() ?: 1.0
+        // English keys must match backend response
+        val dayKeys = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+        val dayLabels = listOf("T2", "T3", "T4", "T5", "T6", "T7", "CN")
+        val tf = ResourcesCompat.getFont(requireContext(), R.font.montserrat_regular)
+
+        // Compute today's index (Mon=0..Sun=6) regardless of device locale
+        val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Bangkok"))
+        cal.firstDayOfWeek = java.util.Calendar.MONDAY
+        // Calendar.DAY_OF_WEEK: Sunday=1..Saturday=7. Convert to Mon=0..Sun=6.
+        val todayIdx = (cal.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7
+
+        for ((idx, key) in dayKeys.withIndex()) {
+            val amount = daily[key] ?: 0.0
+            val heightRatio = if (maxVal > 0) (amount / maxVal) else 0.0
+            val barHeight = (heightRatio * 70).toInt().coerceAtLeast(4)
+
+            // Bar
+            val bar = View(requireContext())
+            val barParams = LinearLayout.LayoutParams(0, dpToPx(barHeight), 1f)
+            barParams.marginStart = dpToPx(4)
+            barParams.marginEnd = dpToPx(4)
+            bar.layoutParams = barParams
+            bar.setBackgroundResource(
+                if (idx <= todayIdx) R.drawable.bg_bar_active
+                else R.drawable.bg_bar_inactive
+            )
+            barChartContainer.addView(bar)
+
+            // Label (Vietnamese)
+            val label = TextView(requireContext())
+            val labelParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            label.layoutParams = labelParams
+            label.text = dayLabels[idx]
+            label.textSize = 10f
+            label.gravity = Gravity.CENTER
+            label.typeface = tf
+            if (idx == todayIdx) {
+                label.setTextColor(Color.parseColor("#1A8754"))
+                label.typeface = ResourcesCompat.getFont(requireContext(), R.font.montserrat_bold)
+            } else {
+                label.setTextColor(Color.parseColor("#AAAAAA"))
+            }
+            weekLabelsContainer.addView(label)
+        }
+    }
+
+    private fun renderPieChart(
+        categories: List<CategoryStat>,
+        total: Double
+    ) {
+        val entries = ArrayList<PieEntry>()
+        val colors = ArrayList<Int>()
+
+        for ((i, cat) in categories.withIndex()) {
+            if (cat.percent > 0) {
+                entries.add(PieEntry(cat.percent.toFloat(), cat.category))
+                colors.add(CHART_COLORS[i % CHART_COLORS.size])
+            }
+        }
+
+        val dataSet = PieDataSet(entries, "")
+        dataSet.colors = colors
+        dataSet.sliceSpace = 2f
+        dataSet.setDrawValues(false)
+
+        pieChart.data = PieData(dataSet)
+        pieChart.setUsePercentValues(true)
+        pieChart.description.isEnabled = false
+        pieChart.setDrawHoleEnabled(true)
+        pieChart.holeRadius = 65f
+        pieChart.setHoleColor(Color.TRANSPARENT)
+        pieChart.setTransparentCircleAlpha(0)
+        pieChart.setCenterText("Total\n${CurrencyPrefs.format(total)}")
+        pieChart.setCenterTextSize(11f)
+        pieChart.setCenterTextColor(Color.parseColor("#1A1A1A"))
+        pieChart.setCenterTextTypeface(ResourcesCompat.getFont(requireContext(), R.font.montserrat_bold))
+        pieChart.setDrawEntryLabels(false)
+        pieChart.legend.isEnabled = false
+        pieChart.animateY(800)
+        pieChart.invalidate()
+
+        // Custom legend
+        legendContainer.removeAllViews()
+        for ((i, cat) in categories.withIndex()) {
+            if (cat.percent <= 0) continue
+            val row = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { bottomMargin = dpToPx(10) }
             }
 
-            for (expense in expenses) {
-                val expenseCal = Calendar.getInstance()
-                expenseCal.timeInMillis = expense.timeStamp
-                val dateLabel = dateFormat.format(expenseCal.time)
-
-                if (dateLabel in dailyTotals) {
-                    dailyTotals[dateLabel] = (dailyTotals[dateLabel]!! + expense.amount).toFloat()
+            // Dot
+            val dot = View(requireContext()).apply {
+                val size = dpToPx(8)
+                layoutParams = LinearLayout.LayoutParams(size, size).apply { marginEnd = dpToPx(8) }
+                setBackgroundColor(CHART_COLORS[i % CHART_COLORS.size])
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    shape = android.graphics.drawable.GradientDrawable.OVAL
+                    setColor(CHART_COLORS[i % CHART_COLORS.size])
                 }
             }
+            row.addView(dot)
 
-            val barEntries = ArrayList<BarEntry>()
-            for ((index, amount) in dailyTotals.values.withIndex()) {
-                barEntries.add(BarEntry(index.toFloat(), amount))
-            }
-            
-            Triple(barEntries, weekDayLabels, dailyTotals.values.maxOrNull() ?: 0f)
-        }
-
-        // Update UI on main thread
-        withContext(Dispatchers.Main) {
-            val (barEntries, weekDayLabels, maxValue) = chartData
-            val tf = ResourcesCompat.getFont(requireContext(), R.font.montserrat_regular)
-
-            val barDataSet = BarDataSet(barEntries, "")
-            barDataSet.color = Color.parseColor("#4CAF50")
-            barDataSet.valueTextColor = Color.BLACK
-            barDataSet.valueTextSize = 12f
-
-            val data = BarData(barDataSet)
-            barChart.data = data
-
-            barChart.setExtraOffsets(10f, 10f, 10f, 30f)
-            data.setValueTextColor(Color.BLACK)
-            data.setValueTypeface(tf)
-
-            barChart.xAxis.apply {
-                valueFormatter = IndexAxisValueFormatter(weekDayLabels)
-                position = XAxis.XAxisPosition.BOTTOM
-                textColor = Color.BLACK
+            // Name
+            val name = TextView(requireContext()).apply {
+                text = cat.category
                 textSize = 12f
-                typeface = tf
-                granularity = 1f
-                setDrawGridLines(false)
-                setDrawAxisLine(false)
-                labelRotationAngle = 0f
+                setTextColor(Color.parseColor("#1A1A1A"))
+                typeface = ResourcesCompat.getFont(context, R.font.montserrat_regular)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
+            row.addView(name)
 
-            val yAxis = barChart.axisLeft
-            yAxis.setDrawGridLines(false)
-            yAxis.setDrawAxisLine(false)
-            yAxis.typeface = tf
-            yAxis.textColor = Color.BLACK
-            yAxis.textSize = 12f
-            yAxis.axisMinimum = 0f
+            // Percent
+            val pct = TextView(requireContext()).apply {
+                text = "${String.format("%.0f", cat.percent)}%"
+                textSize = 12f
+                setTextColor(Color.parseColor("#1A1A1A"))
+                typeface = ResourcesCompat.getFont(context, R.font.montserrat_bold)
+            }
+            row.addView(pct)
 
-            barChart.axisRight.isEnabled = false
-            barChart.description.isEnabled = false
-            barChart.legend.isEnabled = false
-            barChart.setScaleEnabled(false)
-            barChart.setFitBars(true)
-            barChart.animateY(800)
-            barChart.invalidate()
+            legendContainer.addView(row)
         }
     }
 
-    private suspend fun showMostSpentDayThisMonth(expenses: List<Expense>) {
-        val result = withContext(Dispatchers.Default) {
-            val calendar = Calendar.getInstance()
-            val currentMonth = calendar.get(Calendar.MONTH)
-            val currentYear = calendar.get(Calendar.YEAR)
+    private fun renderCategoryList(
+        categories: List<CategoryStat>
+    ) {
+        categoryList.removeAllViews()
+        val colorNames = listOf("green", "red", "blue", "orange", "purple", "cyan", "brown", "gray")
 
-            val monthlyExpenses = expenses.filter {
-                val expCal = Calendar.getInstance().apply { timeInMillis = it.timeStamp }
-                expCal.get(Calendar.MONTH) == currentMonth && expCal.get(Calendar.YEAR) == currentYear
-            }
+        for ((i, cat) in categories.withIndex()) {
+            if (cat.amount <= 0) continue
+            val item = LayoutInflater.from(requireContext())
+                .inflate(R.layout.item_category_stat, categoryList, false)
 
-            if (monthlyExpenses.isEmpty()) {
-                return@withContext "No expenses this month"
-            }
+            item.findViewById<TextView>(R.id.category_name).text = cat.category
+            item.findViewById<TextView>(R.id.category_amount).text = "-${CurrencyPrefs.format(cat.amount)}"
 
-            // Group by date and sum amounts
-            val grouped = monthlyExpenses.groupBy {
-                val sdf = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-                sdf.format(Date(it.timeStamp))
-            }.mapValues { entry ->
-                entry.value.sumOf { it.amount }
-            }
+            val progressBar = item.findViewById<View>(R.id.progress_fill)
+            val params = progressBar.layoutParams as LinearLayout.LayoutParams
+            params.weight = cat.percent.toFloat()
+            progressBar.layoutParams = params
+            progressBar.setBackgroundColor(CHART_COLORS[i % CHART_COLORS.size])
 
-            val (maxDateStr, maxAmt) = grouped.maxByOrNull { it.value } ?: return@withContext "No expenses"
+            val spacer = item.findViewById<View>(R.id.progress_spacer)
+            val spacerParams = spacer.layoutParams as LinearLayout.LayoutParams
+            spacerParams.weight = (100 - cat.percent).toFloat()
+            spacer.layoutParams = spacerParams
 
-            // Convert date to readable format like "3rd Aug"
-            val date = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).parse(maxDateStr)!!
-            val day = SimpleDateFormat("d", Locale.getDefault()).format(date)
-            val month = SimpleDateFormat("MMM", Locale.getDefault()).format(date)
-
-            val suffix = when {
-                day.endsWith("1") && day != "11" -> "st"
-                day.endsWith("2") && day != "12" -> "nd"
-                day.endsWith("3") && day != "13" -> "rd"
-                else -> "th"
-            }
-
-            val dayWithSuffix = "$day$suffix $month"
-            Pair(dayWithSuffix, maxAmt)
-        }
-
-        withContext(Dispatchers.Main) {
-            if (result is String) {
-                mostSpentTxt.text = result
-            } else {
-                val (dayStr, amount) = result as Pair<String, Double>
-                val sym = CurrencyPrefs.getSymbol(requireContext())
-                val formattedAmount = "$sym${"%,.0f".format(amount)}"
-                mostSpentTxt.text = "$dayStr - $formattedAmount"
-            }
+            categoryList.addView(item)
         }
     }
 
-    private suspend fun loadCategoryPieChart(expenses: List<Expense>) {
-        val chartData = withContext(Dispatchers.Default) {
-            val calendar = Calendar.getInstance()
-            val currentMonth = calendar.get(Calendar.MONTH)
-            val currentYear = calendar.get(Calendar.YEAR)
-
-            // Filter expenses for current month
-            val monthlyExpenses = expenses.filter {
-                val cal = Calendar.getInstance().apply { timeInMillis = it.timeStamp }
-                cal.get(Calendar.MONTH) == currentMonth && cal.get(Calendar.YEAR) == currentYear
-            }
-
-            // Group by category and sum amounts
-            val categoryTotals = monthlyExpenses.groupBy { it.category }
-                .mapValues { it.value.sumOf { exp -> exp.amount } }
-
-            Pair(categoryTotals, SimpleDateFormat("MMMM", Locale.getDefault()).format(Date()))
-        }
-
-        withContext(Dispatchers.Main) {
-            val (categoryTotals, currentMonthName) = chartData
-            val tf = ResourcesCompat.getFont(requireContext(), R.font.montserrat_regular)
-
-            if (categoryTotals.isEmpty()) {
-                pieChart.clear()
-                pieChart.centerText = "No Data"
-                pieChart.invalidate()
-                return@withContext
-            }
-
-            val entries = ArrayList<PieEntry>()
-            categoryTotals.forEach { (category, amount) ->
-                entries.add(PieEntry(amount.toFloat(), category))
-            }
-
-            val dataSet = PieDataSet(entries, "")
-            dataSet.sliceSpace = 3f
-            dataSet.selectionShift = 5f
-            dataSet.colors = ColorTemplate.MATERIAL_COLORS.toList()
-
-            val data = PieData(dataSet)
-            data.setDrawValues(false)
-
-            pieChart.data = data
-            pieChart.setUsePercentValues(true)
-            pieChart.description.isEnabled = false
-            pieChart.setDrawHoleEnabled(true)
-            pieChart.setHoleColor(Color.TRANSPARENT)
-            pieChart.setTransparentCircleAlpha(0)
-            pieChart.setCenterText(currentMonthName)
-            pieChart.setCenterTextTypeface(tf)
-            pieChart.setCenterTextSize(16f)
-            pieChart.setCenterTextColor(Color.BLACK)
-            pieChart.setEntryLabelColor(Color.BLACK)
-            pieChart.setEntryLabelTextSize(12f)
-            pieChart.setDrawEntryLabels(false)
-
-            val legend = pieChart.legend
-            legend.verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
-            legend.horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
-            legend.orientation = Legend.LegendOrientation.HORIZONTAL
-            legend.setDrawInside(false)
-            legend.textColor = Color.BLACK
-            legend.typeface = tf
-            legend.textSize = 12f
-            legend.isWordWrapEnabled = true
-            legend.yOffset = 10f
-            legend.xOffset = -20f
-            legend.form = Legend.LegendForm.CIRCLE
-            legend.xEntrySpace = 25f
-            legend.yEntrySpace = 10f
-
-            pieChart.animateY(1000, Easing.EaseInOutQuad)
-            pieChart.invalidate()
-        }
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
     }
 }

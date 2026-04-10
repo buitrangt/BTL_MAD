@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.arijit.budgettracker.R
 import com.arijit.budgettracker.db.Expense
+import com.arijit.budgettracker.utils.CurrencyPrefs
 
 class HomeRecentAdapter(
     var onItemLongClick: ((Expense) -> Unit)? = null,
@@ -36,7 +37,7 @@ class HomeRecentAdapter(
 
         fun bind(expense: Expense) {
             val sign = if (expense.type == "income") "+" else "-"
-            tvAmount.text = "$sign₫%.2f".format(expense.amount)
+            tvAmount.text = "$sign${CurrencyPrefs.format(expense.amount)}"
             textViewCategory.text = expense.category
             textViewSubtitle.text = expense.note.takeIf { it.isNotBlank() } ?: "Ghi chú"
             tvDate.text = formatDate(expense.timeStamp)

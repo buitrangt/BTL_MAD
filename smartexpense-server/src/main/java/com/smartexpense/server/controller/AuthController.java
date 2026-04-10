@@ -2,11 +2,13 @@ package com.smartexpense.server.controller;
 
 import com.smartexpense.server.dto.AuthRequest;
 import com.smartexpense.server.dto.AuthResponse;
+import com.smartexpense.server.dto.ChangePasswordRequest;
 import com.smartexpense.server.dto.ResetPasswordRequest;
 import com.smartexpense.server.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -50,6 +52,19 @@ public class AuthController {
         try {
             authService.resetPassword(request.getEmail(), request.getNewPassword());
             return ResponseEntity.ok("Mật khẩu đã được thay đổi thành công.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            Authentication auth,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        try {
+            authService.changePassword(auth.getName(), request.getOldPassword(), request.getNewPassword());
+            return ResponseEntity.ok("Đổi mật khẩu thành công");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

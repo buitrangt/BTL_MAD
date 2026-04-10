@@ -52,6 +52,11 @@ class HomeFragment : Fragment() {
             startActivity(Intent(requireContext(), AddTransActivity::class.java))
         }
 
+        view.findViewById<View>(R.id.btn_ai_analysis).setOnClickListener {
+            Vibration.vibrate(requireContext(), 50)
+            startActivity(Intent(requireContext(), com.arijit.budgettracker.InsightsActivity::class.java))
+        }
+
         val name = TokenManager.getName(requireContext())?.takeIf { it.isNotBlank() } ?: "User"
         welcomeName.text = name
 
@@ -71,8 +76,10 @@ class HomeFragment : Fragment() {
         adapter.onEditClick = { expense ->
             val intent = Intent(requireContext(), AddTransActivity::class.java)
             intent.putExtra("expenseId", expense.id)
+            expense.remoteId?.let { intent.putExtra("remoteId", it) }
             intent.putExtra("type", expense.type)
             intent.putExtra("category", expense.category)
+            intent.putExtra("name", expense.name)
             intent.putExtra("amount", expense.amount)
             intent.putExtra("note", expense.note)
             intent.putExtra("timeStamp", expense.timeStamp)
@@ -86,27 +93,27 @@ class HomeFragment : Fragment() {
 
 
         viewModel.todayAmount.observe(viewLifecycleOwner) {
-            todayAmt.text = "₫%.2f".format(it)
+            todayAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it)
         }
 
         viewModel.weekAmount.observe(viewLifecycleOwner) {
-            thisWeekAmt.text = "₫%.2f".format(it)
+            thisWeekAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it)
         }
 
         viewModel.monthAmount.observe(viewLifecycleOwner) {
-            thisMonthAmt.text = "₫%.2f".format(it)
+            thisMonthAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it)
         }
+
+        // Load data from API
+        viewModel.loadHomeOverview()
 
         return view
     }
 
     override fun onResume() {
         super.onResume()
-
-        // Force refresh amounts display
-        viewModel.todayAmount.value?.let { todayAmt.text = "₫%.2f".format(it) }
-        viewModel.weekAmount.value?.let { thisWeekAmt.text = "₫%.2f".format(it) }
-        viewModel.monthAmount.value?.let { thisMonthAmt.text = "₫%.2f".format(it) }
+        // Refresh from API when returning to Home tab
+        viewModel.loadHomeOverview()
     }
 
     private fun showDeleteConfirmDialog(expense: com.arijit.budgettracker.db.Expense) {

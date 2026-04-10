@@ -1,6 +1,8 @@
 package com.smartexpense.server.controller;
 
+import com.smartexpense.server.dto.HomeOverviewResponse;
 import com.smartexpense.server.dto.StatsResponse;
+import com.smartexpense.server.dto.WeeklyOverviewResponse;
 import com.smartexpense.server.service.StatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +14,16 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class StatsController {
     private final StatsService statsService;
+
+    @GetMapping("/home-overview")
+    public ResponseEntity<HomeOverviewResponse> getHomeOverview(Authentication auth) {
+        return ResponseEntity.ok(statsService.getHomeOverview(auth.getName()));
+    }
+
+    @GetMapping("/weekly-overview")
+    public ResponseEntity<WeeklyOverviewResponse> getWeeklyOverview(Authentication auth) {
+        return ResponseEntity.ok(statsService.getWeeklyOverview(auth.getName()));
+    }
 
     @GetMapping("/daily")
     public ResponseEntity<StatsResponse> getDailyStats(Authentication auth) {

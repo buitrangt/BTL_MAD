@@ -7,6 +7,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -49,7 +50,13 @@ class HistoryFragment : Fragment() {
     private lateinit var tvMonthLabelExpense: android.widget.TextView
     private lateinit var tvMonthLabelIncome: android.widget.TextView
     private lateinit var tvMonthLabelSavings: android.widget.TextView
-    
+    private lateinit var cardExpense: android.widget.LinearLayout
+    private lateinit var cardIncome: android.widget.LinearLayout
+    private lateinit var cardSavings: android.widget.LinearLayout
+
+    // Active filter: "expense", "income", "savings" (= all). Default = expense.
+    private var activeTypeFilter: String = "expense"
+
     // Local-first: keep a snapshot for filtering (search/date)
     private var allLocalExpenses: List<Expense> = emptyList()
     private var displayedTransactions: List<DailyExpense> = emptyList()
@@ -101,13 +108,22 @@ class HistoryFragment : Fragment() {
             etSearchTransaction = view.findViewById(R.id.etSearchTransaction)
             btnDatePicker = view.findViewById(R.id.btnDatePicker)
             containerRv = view.findViewById(R.id.rvHistory)
+
+            // 3 type filter cards
+            cardExpense = view.findViewById(R.id.cardExpense)
+            cardIncome = view.findViewById(R.id.cardIncome)
+            cardSavings = view.findViewById(R.id.cardSavings)
+            cardExpense.setOnClickListener { setTypeFilter("expense") }
+            cardIncome.setOnClickListener { setTypeFilter("income") }
+            cardSavings.setOnClickListener { setTypeFilter("savings") }
+            updateCardSelection()
             
             // Setup SwipeRefreshLayout for pull-to-refresh
             swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout)
             swipeRefreshLayout.setOnRefreshListener {
                 lifecycleScope.launch {
                     try {
-                        com.arijit.budgettracker.utils.SyncManager.syncIfOnline(requireContext().applicationContext)
+                        loadFromApi()
                     } catch (_: Exception) {
                         // ignore
                     } finally {
@@ -149,12 +165,13 @@ class HistoryFragment : Fragment() {
                         .setPositiveButton("Xóa") { _, _ ->
                             lifecycleScope.launch {
                                 try {
-                                    withContext(Dispatchers.IO) {
-                                        val db = com.arijit.budgettracker.db.ExpenseDatabase.getDatabase(requireContext().applicationContext)
-                                        db.expenseDao().deleteExpense(expense)
+                                    val targetId = expense.remoteId
+                                    if (targetId != null) {
+                                        withContext(Dispatchers.IO) {
+                                            apiService.deleteExpense(targetId)
+                                        }
                                     }
-                                    // Best-effort server delete.
-                                    com.arijit.budgettracker.utils.SyncManager.deleteExpenseIfOnline(requireContext().applicationContext, expense)
+                                    loadFromApi()
                                 } catch (_: Exception) {
                                     // ignore
                                 }
@@ -168,8 +185,8 @@ class HistoryFragment : Fragment() {
             containerRv.layoutManager = layoutManager
             containerRv.adapter = historyAdapter
 
-            // Observe local DB so list updates immediately on add/edit/delete.
-            observeLocalDb()
+            // Load from API
+            loadFromApi()
             
             // Update month labels on first load
             val calendar = Calendar.getInstance()
@@ -193,17 +210,16 @@ class HistoryFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         // Reset any search/date filters when returning to History tab.
-        // (ViewPager keeps fragments alive; without this, filters "stick".)
         if (hasInitialized) {
             resetToDefaultState()
         } else {
             hasInitialized = true
         }
 
-        // Best-effort sync, but UI is driven by local DB.
+        // Reload from API every time we focus the tab
         lifecycleScope.launch {
             try {
-                com.arijit.budgettracker.utils.SyncManager.syncIfOnline(requireContext().applicationContext)
+                loadFromApi()
             } catch (_: Exception) {
                 // ignore
             }
@@ -235,21 +251,131 @@ class HistoryFragment : Fragment() {
         updateLocalMonthStats(allLocalExpenses)
     }
 
-    private fun observeLocalDb() {
-        val db = com.arijit.budgettracker.db.ExpenseDatabase.getDatabase(requireContext().applicationContext)
-        val dao = db.expenseDao()
+    private fun loadFromApi() {
         viewLifecycleOwner.lifecycleScope.launch {
-            dao.getAllExpensesFlow().collect { expenses ->
-                allLocalExpenses = expenses
-                applyLocalFilters(keyword = etSearchTransaction.text?.toString()?.trim().orEmpty())
-                updateLocalMonthStats(expenses)
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    apiService.getAllTransactions()
+                }
+                if (response.isSuccessful) {
+                    val expenses = response.body().orEmpty().map { it.toExpense() }
+                    allLocalExpenses = expenses
+                    applyLocalFilters(keyword = etSearchTransaction.text?.toString()?.trim().orEmpty())
+                    updateLocalMonthStats(expenses)
+                }
+            } catch (e: Exception) {
+                Log.e("HistoryFragment", "loadFromApi error: ${e.message}", e)
             }
+        }
+    }
+
+    private fun TransactionResponse.toExpense(): Expense {
+        return Expense(
+            id = id.toInt(),
+            remoteId = id,
+            amount = amount,
+            name = name,
+            category = categoryName ?: name,
+            note = note ?: "",
+            type = type.lowercase(),
+            timeStamp = timeStamp,
+            localCreatedAt = timeStamp,
+            synced = true
+        )
+    }
+
+    private fun setTypeFilter(type: String) {
+        if (activeTypeFilter == type) return
+        activeTypeFilter = type
+        updateCardSelection()
+        applyLocalFilters(keyword = etSearchTransaction.text?.toString()?.trim().orEmpty())
+    }
+
+    private fun updateCardSelection() {
+        val view = view ?: return
+
+        // Cache references
+        val tvCardExpenseTitle = view.findViewById<TextView>(R.id.tvCardExpenseTitle)
+        val tvCardIncomeTitle = view.findViewById<TextView>(R.id.tvCardIncomeTitle)
+        val tvCardSavingsTitle = view.findViewById<TextView>(R.id.tvCardSavingsTitle)
+
+        val iconExpenseWrap = view.findViewById<View>(R.id.iconExpenseWrap)
+        val iconIncomeWrap = view.findViewById<View>(R.id.iconIncomeWrap)
+        val iconSavingsWrap = view.findViewById<View>(R.id.iconSavingsWrap)
+
+        val iconExpense = view.findViewById<android.widget.ImageView>(R.id.iconExpense)
+        val iconIncome = view.findViewById<android.widget.ImageView>(R.id.iconIncome)
+        val iconSavings = view.findViewById<android.widget.ImageView>(R.id.iconSavings)
+
+        val selectedBg = R.drawable.bg_card_filter_selected
+        val unselectedBg = R.drawable.bg_card_filter_unselected
+        val white = android.graphics.Color.WHITE
+        val muted = android.graphics.Color.parseColor("#8E96A3")
+        val dark = android.graphics.Color.parseColor("#1A2235")
+
+        // ===== Expense card =====
+        if (activeTypeFilter == "expense") {
+            cardExpense.setBackgroundResource(selectedBg)
+            iconExpenseWrap.setBackgroundResource(R.drawable.bg_icon_circle_white)
+            iconExpense.setColorFilter(white)
+            tvCardExpenseTitle.setTextColor(white)
+            tvMonthLabelExpense.setTextColor(white)
+            tvMonthExpense.setTextColor(white)
+        } else {
+            cardExpense.setBackgroundResource(unselectedBg)
+            iconExpenseWrap.setBackgroundResource(R.drawable.bg_icon_circle_red)
+            iconExpense.setColorFilter(android.graphics.Color.parseColor("#E53935"))
+            tvCardExpenseTitle.setTextColor(dark)
+            tvMonthLabelExpense.setTextColor(muted)
+            tvMonthExpense.setTextColor(dark)
+        }
+
+        // ===== Income card =====
+        if (activeTypeFilter == "income") {
+            cardIncome.setBackgroundResource(selectedBg)
+            iconIncomeWrap.setBackgroundResource(R.drawable.bg_icon_circle_white)
+            iconIncome.setColorFilter(white)
+            tvCardIncomeTitle.setTextColor(white)
+            tvMonthLabelIncome.setTextColor(white)
+            tvMonthIncome.setTextColor(white)
+        } else {
+            cardIncome.setBackgroundResource(unselectedBg)
+            iconIncomeWrap.setBackgroundResource(R.drawable.bg_icon_circle_green)
+            iconIncome.setColorFilter(android.graphics.Color.parseColor("#10B981"))
+            tvCardIncomeTitle.setTextColor(dark)
+            tvMonthLabelIncome.setTextColor(muted)
+            tvMonthIncome.setTextColor(dark)
+        }
+
+        // ===== Savings card =====
+        if (activeTypeFilter == "savings") {
+            cardSavings.setBackgroundResource(selectedBg)
+            iconSavingsWrap.setBackgroundResource(R.drawable.bg_icon_circle_white)
+            iconSavings.setColorFilter(white)
+            tvCardSavingsTitle.setTextColor(white)
+            tvMonthLabelSavings.setTextColor(white)
+            tvMonthSavings.setTextColor(white)
+        } else {
+            cardSavings.setBackgroundResource(unselectedBg)
+            iconSavingsWrap.setBackgroundResource(R.drawable.bg_icon_circle_blue)
+            iconSavings.setColorFilter(android.graphics.Color.parseColor("#1976D2"))
+            tvCardSavingsTitle.setTextColor(dark)
+            tvMonthLabelSavings.setTextColor(muted)
+            tvMonthSavings.setTextColor(android.graphics.Color.parseColor("#18C58F"))
         }
     }
 
     private fun applyLocalFilters(keyword: String) {
         val filtered = allLocalExpenses
             .asSequence()
+            .filter { e ->
+                // Type filter from selected card
+                when (activeTypeFilter) {
+                    "expense" -> e.type.equals("expense", true)
+                    "income" -> e.type.equals("income", true)
+                    else -> true // savings = show all
+                }
+            }
             .filter { e ->
                 if (keyword.isBlank()) true
                 else {
@@ -300,9 +426,9 @@ class HistoryFragment : Fragment() {
             }
             .sumOf { it.amount }
 
-        tvMonthIncome.text = "${numberFormatter.format(monthIncome.toLong())} đ"
-        tvMonthExpense.text = "${numberFormatter.format(monthExpense.toLong())} đ"
-        tvMonthSavings.text = "${numberFormatter.format((monthIncome - monthExpense).toLong())} đ"
+        tvMonthIncome.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(monthIncome)
+        tvMonthExpense.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(monthExpense)
+        tvMonthSavings.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(monthIncome - monthExpense)
     }
 
     private fun groupExpensesByDate(expenses: List<Expense>): List<DailyExpense> {
@@ -382,9 +508,9 @@ class HistoryFragment : Fragment() {
             }
             .sumOf { it.amount }
 
-        tvMonthIncome.text = "${numberFormatter.format(monthIncome.toLong())} đ"
-        tvMonthExpense.text = "${numberFormatter.format(monthExpense.toLong())} đ"
-        tvMonthSavings.text = "${numberFormatter.format((monthIncome - monthExpense).toLong())} đ"
+        tvMonthIncome.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(monthIncome)
+        tvMonthExpense.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(monthExpense)
+        tvMonthSavings.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(monthIncome - monthExpense)
 
         updateMonthLabels(selectedDate)
     }

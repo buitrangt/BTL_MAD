@@ -32,9 +32,75 @@ data class TransactionResponse(
     val timeStamp: Long
 )
 data class StatsResponse(val totalAmount: Double, val categoryBreakdown: Map<String, Double>?)
+data class WeeklyOverviewResponse(
+    val totalAmount: Double,
+    val percentChange: Double,
+    val dailyBreakdown: Map<String, Double>,
+    val categoryBreakdown: List<CategoryStat>
+)
+data class HomeOverviewResponse(
+    val todayAmount: Double,
+    val weekAmount: Double,
+    val monthAmount: Double,
+    val monthIncome: Double,
+    val monthExpense: Double,
+    val monthSavings: Double,
+    val recentTransactions: List<TransactionResponse>
+)
+data class CategoryStat(
+    val category: String,
+    val amount: Double,
+    val percent: Double
+)
 data class ResetPasswordRequest(val email: String, val newPassword: String)
+data class ChangePasswordRequest(val oldPassword: String, val newPassword: String)
 data class CategoryRequest(val name: String, val note: String?)
 data class CategoryResponse(val id: Long, val name: String, val note: String?, val isDefault: Boolean)
+data class SmsTemplateDto(val id: Long, val senderPattern: String, val amountRegex: String, val type: String, val bankName: String, val version: Int)
+
+// ======== INSIGHTS DTOs ========
+data class PredictionDto(
+    val month: Int?,
+    val year: Int?,
+    val currentAmount: Double,
+    val predictedAmount: Double,
+    val status: String?
+)
+data class ClassificationDto(
+    val month: Int?,
+    val year: Int?,
+    val level: String,
+    val label: String,
+    val note: String?
+)
+data class AnomalyDto(
+    val categoryId: Long,
+    val categoryName: String,
+    val amountDiff: Double,
+    val percentIncrease: Double
+)
+data class BudgetSuggestionDto(
+    val categoryId: Long,
+    val categoryName: String,
+    val suggestedAmount: Double
+)
+data class InsightsSummaryDto(
+    val prediction: PredictionDto?,
+    val classification: ClassificationDto?,
+    val anomalies: List<AnomalyDto>,
+    val budgetSuggestions: List<BudgetSuggestionDto>
+)
+
+// ======== CHAT DTOs ========
+data class ChatRequest(val message: String, val sessionId: String? = null)
+data class ChatReply(val sessionId: String, val reply: String)
+data class ChatMessageDto(
+    val id: Long,
+    val sessionId: String,
+    val role: String,
+    val content: String,
+    val createdAt: String?
+)
 
 interface ApiService {
     // Auth
@@ -81,6 +147,12 @@ interface ApiService {
     suspend fun deleteCategory(@Path("id") id: Long): Response<Void>
 
     // Stats
+    @GET("api/stats/home-overview")
+    suspend fun getHomeOverview(): Response<HomeOverviewResponse>
+
+    @GET("api/stats/weekly-overview")
+    suspend fun getWeeklyOverview(): Response<WeeklyOverviewResponse>
+
     @GET("api/stats/daily")
     suspend fun getDailyStats(): Response<StatsResponse>
 
@@ -110,6 +182,31 @@ interface ApiService {
     @POST("api/auth/reset-password")
     suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<ResponseBody>
 
+    @POST("api/auth/change-password")
+    suspend fun changePassword(@Body request: ChangePasswordRequest): Response<ResponseBody>
+
+    // SMS Templates
+    @GET("api/sms/templates")
+    suspend fun getSmsTemplates(): Response<List<SmsTemplateDto>>
+
+    // ===== INSIGHTS =====
+    @GET("api/insights/summary")
+    suspend fun getInsightsSummary(): Response<InsightsSummaryDto>
+
+    @POST("api/insights/refresh")
+    suspend fun refreshInsights(): Response<InsightsSummaryDto>
+
+    // ===== FINCHAT (NEW Gemini-powered) =====
+    @POST("api/finchat/message")
+    suspend fun sendChatMessage(@Body request: ChatRequest): Response<ChatReply>
+
+    @GET("api/finchat/history/{sessionId}")
+    suspend fun getChatHistory(@Path("sessionId") sessionId: String): Response<List<ChatMessageDto>>
+
+    @GET("api/finchat/recent")
+    suspend fun getRecentChatMessages(@Query("limit") limit: Int = 20): Response<List<ChatMessageDto>>
+
+    // ===== FINCHAT (legacy, kept for compat) =====
     @POST("api/finchat/ask")
     suspend fun askFinChat(
         @Query("message") message: String,
