@@ -52,6 +52,11 @@ class HomeFragment : Fragment() {
             startActivity(Intent(requireContext(), AddTransActivity::class.java))
         }
 
+        view.findViewById<View>(R.id.btn_ai_analysis).setOnClickListener {
+            Vibration.vibrate(requireContext(), 50)
+            startActivity(Intent(requireContext(), com.arijit.budgettracker.InsightsActivity::class.java))
+        }
+
         val name = TokenManager.getName(requireContext())?.takeIf { it.isNotBlank() } ?: "User"
         welcomeName.text = name
 
