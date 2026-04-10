@@ -6,7 +6,42 @@ import retrofit2.Response
 import retrofit2.http.*
 
 // DTOs
-data class ExpenseRequest(val amount: Double, val category: String, val timeStamp: Long)
+data class ExpenseRequest(
+    val amount: Double,
+    val category: String,
+    val timeStamp: Long,
+    val type: String = "EXPENSE",
+    val name: String = "",
+    val source: String = "MANUAL"
+)
+
+// SMS DTOs
+data class SmsTemplateResponse(
+    val id: Long,
+    val senderPattern: String,
+    val amountRegex: String,
+    val type: String,
+    val bankName: String,
+    val version: Int
+)
+
+data class SmsTransactionRequest(
+    val sender: String,
+    val rawContent: String,
+    val parsedAmount: Double,
+    val parsedCategoryName: String,
+    val type: String,
+    val transactionTime: Long
+)
+
+data class SmsTransactionResponse(
+    val id: Long,
+    val sender: String,
+    val parsedAmount: Double,
+    val type: String,
+    val transactionTime: Long,
+    val status: String
+)
 data class ExpenseResponse(
     val id: Long,
     val amount: Double,
@@ -87,6 +122,13 @@ interface ApiService {
 
     @POST("api/auth/reset-password")
     suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<ResponseBody>
+
+    // SMS
+    @GET("api/sms/templates")
+    suspend fun getSmsTemplates(): Response<List<SmsTemplateResponse>>
+
+    @POST("api/sms/transactions/sync")
+    suspend fun syncSmsTransactions(@Body requests: List<SmsTransactionRequest>): Response<List<SmsTransactionResponse>>
 
     @POST("api/finchat/ask")
     suspend fun askFinChat(

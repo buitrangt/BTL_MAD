@@ -12,7 +12,5 @@ data class Expense(
     val type: String = "EXPENSE",  // "INCOME" hoặc "EXPENSE"
     val timeStamp: Long = System.currentTimeMillis(),
     val synced: Boolean = false,
-    val type: String = "EXPENSE",
-    val name: String? = null,
     val source: String = "MANUAL"
 )
