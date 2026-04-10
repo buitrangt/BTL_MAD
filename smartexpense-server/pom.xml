@@ -16,6 +16,7 @@
 
     <properties>
         <java.version>17</java.version>
+        <start-class>com.smartexpense.server.SmartExpenseServerApplication</start-class>
     </properties>
 
     <dependencies>

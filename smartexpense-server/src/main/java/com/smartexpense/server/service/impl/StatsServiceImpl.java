@@ -29,7 +29,8 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public StatsResponse getWeeklyStats(String userEmail) {
         User user = findUser(userEmail);
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok"));
+        cal.setFirstDayOfWeek(Calendar.MONDAY);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
@@ -43,7 +44,7 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public StatsResponse getMonthlyStats(String userEmail) {
         User user = findUser(userEmail);
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok"));
         cal.set(Calendar.DAY_OF_MONTH, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
@@ -57,7 +58,7 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public StatsResponse getByCategoryStats(String userEmail) {
         User user = findUser(userEmail);
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok"));
         cal.set(Calendar.DAY_OF_MONTH, 1);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
@@ -69,13 +70,13 @@ public class StatsServiceImpl implements StatsService {
     }
 
     private StatsResponse buildStats(Long userId, long start, long end) {
-        var transactions = transactionRepository.findByUserIdAndTimeStampBetween(userId, start, end);
+        var transactions = transactionRepository.findByUserIdAndTypeAndTimeStampBetween(userId, "expense", start, end);
         BigDecimal total = transactions.stream()
                 .map(e -> e.getAmount())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         Map<String, BigDecimal> categoryBreakdown = new LinkedHashMap<>();
-        var categoryResults = transactionRepository.sumByCategory(userId, start, end);
+        var categoryResults = transactionRepository.sumByCategoryAndType(userId, "expense", start, end);
         for (Object[] row : categoryResults) {
             categoryBreakdown.put((String) row[0], (BigDecimal) row[1]);
         }
@@ -87,7 +88,7 @@ public class StatsServiceImpl implements StatsService {
     }
 
     private Calendar getStartOfDay() {
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok"));
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);

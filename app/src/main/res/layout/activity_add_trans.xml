@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F4F0">
+
+    <!-- TOP SECTION (white background) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#FFFFFF"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp">
+
+        <!-- Header Row: X | KHOẢN CHI | ✓ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:id="@+id/btnClose"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="✕"
+                android:textSize="18sp"
+                android:textColor="#999999"
+                android:gravity="center"
+                android:contentDescription="@string/close"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- KHOẢN CHI Badge -->
+            <LinearLayout
+                android:id="@+id/btnType"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_badge_red"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:gravity="center_vertical"
+                android:minWidth="48dp"
+                android:contentDescription="@string/transaction_type"
+                android:clickable="true"
+                android:focusable="true">
+
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/circle_red"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/tvType"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="KHOẢN CHI"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#555555"
+                    android:layout_marginEnd="6dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="▼"
+                    android:textSize="11sp"
+                    android:textColor="#999999" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/btnConfirm"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="✓"
+                android:textSize="18sp"
+                android:textColor="#999999"
+                android:gravity="center"
+                android:contentDescription="@string/confirm"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+        <!-- Ghi chú label -->
+        <TextView
+            android:id="@+id/labelNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/note_hint"
+            android:textSize="13sp"
+            android:textColor="#AAAAAA"
+            android:layout_marginBottom="6dp"
+            android:labelFor="@id/etNote" />
+
+        <!-- Note Input -->
+        <EditText
+            android:id="@+id/etNote"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_input"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:textSize="14sp"
+            android:textColor="#333333"
+            android:inputType="text"
+            android:layout_marginBottom="16dp" />
+
+        <!-- CHỌN DANH MỤC Badge -->
+        <LinearLayout
+            android:id="@+id/catg_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_badge_green"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:gravity="center_vertical"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:minWidth="48dp"
+            android:contentDescription="@string/select_category"
+            android:clickable="true"
+            android:focusable="true">
+
+            <View
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/circle_green"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/tvCategory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CHỌN DANH MỤC"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#666666"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="▼"
+                android:textSize="11sp"
+                android:textColor="#AAAAAA" />
+
+        </LinearLayout>
+
+        <!-- Amount Display -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₫"
+                android:textSize="42sp"
+                android:textColor="#1A1A1A"
+                android:fontFamily="sans-serif-light"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/tvAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0.00"
+                android:textSize="56sp"
+                android:textColor="#1A1A1A"
+                android:letterSpacing="-0.04"
+                android:fontFamily="sans-serif-light" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- NUMPAD SECTION (white card, rounded top) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@drawable/bg_numpad_card"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="8dp">
+
+        <!-- Row 1: 1 2 3 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_marginBottom="10dp">
+
+            <TextView
+                android:id="@+id/btn1"
+                style="@style/ExpenseTracker.NumpadKey"
+                android:text="1" />
+            <View android:layout_width="10dp" android:layout_height="0dp" />
+            <TextView
+                android:id="@+id/btn2"
+                style="@style/ExpenseTracker.NumpadKey"
+                android:text="2" />
+            <View android:layout_width="10dp" android:layout_height="0dp" />
+            <TextView
+                android:id="@+id/btn3"
+                style="@style/ExpenseTracker.NumpadKey"
+                android:text="3" />
+
+        </LinearLayout>
+
+        <!-- Row 2: 4 5 6 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_marginBottom="10dp">
+
+            <TextView
+                android:id="@+id/btn4"
+                style="@style/ExpenseTracker.NumpadKey"
+                android:text="4" />
+            <View android:layout_width="10dp" android:layout_height="0dp" />
+            <TextView
+                android:id="@+id/btn5"
+                style="@style/ExpenseTracker.NumpadKey"
+                android:text="5" />
+            <View android:layout_width="10dp" android:layout_height="0dp" />
+            <TextView
+                android:id="@+id/btn6"
+                style="@style/ExpenseTracker.NumpadKey"
+                android:text="6" />
+
+        </LinearLayout>
+
+        <!-- Row 3: 7 8 9 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_marginBottom="10dp">
+
+            <TextView
+                android:id="@+id/btn7"
+                style="@style/ExpenseTracker.NumpadKey"
+                android:text="7" />
+            <View android:layout_width="10dp" android:layout_height="0dp" />
+            <TextView
+                android:id="@+id/btn8"
+                style="@style/ExpenseTracker.NumpadKey"
+                android:text="8" />
+            <View android:layout_width="10dp" android:layout_height="0dp" />
+            <TextView
+                android:id="@+id/btn9"
+                style="@style/ExpenseTracker.NumpadKey"
+                android:text="9" />
+
+        </LinearLayout>
+
+        <!-- Row 4: ⌫ 0 . -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_marginBottom="10dp">
+
+            <TextView
+                android:id="@+id/btnBackspace"
+                style="@style/ExpenseTracker.NumpadKeyDark"
+                android:text="⌫" />
+            <View android:layout_width="10dp" android:layout_height="0dp" />
+            <TextView
+                android:id="@+id/btn0"
+                style="@style/ExpenseTracker.NumpadKey"
+                android:text="0" />
+            <View android:layout_width="10dp" android:layout_height="0dp" />
+            <TextView
+                android:id="@+id/btnDot"
+                style="@style/ExpenseTracker.NumpadKey"
+                android:text="." />
+
+        </LinearLayout>
+
+        <!-- HÔM NAY footer (clickable for date picker) -->
+        <LinearLayout
+            android:id="@+id/calendarFooter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_gravity="center_horizontal"
+            android:paddingTop="8dp"
+            android:paddingBottom="4dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?android:attr/selectableItemBackground">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📅"
+                android:textSize="14sp"
+                android:layout_marginEnd="6dp" />
+
+            <TextView
+                android:id="@+id/tvDateFooter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="HÔM NAY"
+                android:textSize="13sp"
+                android:textColor="#BBBBBB" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

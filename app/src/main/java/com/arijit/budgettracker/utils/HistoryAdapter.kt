@@ -9,9 +9,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.arijit.budgettracker.R
+import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.models.DailyExpense
 
-class HistoryAdapter : ListAdapter<DailyExpense, HistoryAdapter.HistoryViewHolder>(DIFF_CALLBACK) {
+class HistoryAdapter(
+    var onExpenseEditClick: ((Expense) -> Unit)? = null,
+    var onExpenseDeleteClick: ((Expense) -> Unit)? = null
+) : ListAdapter<DailyExpense, HistoryAdapter.HistoryViewHolder>(DIFF_CALLBACK) {
 
     companion object {
         private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<DailyExpense>() {
@@ -30,7 +34,7 @@ class HistoryAdapter : ListAdapter<DailyExpense, HistoryAdapter.HistoryViewHolde
         val expenseRecyclerView: RecyclerView = itemView.findViewById(R.id.expense_rv)
         
         // Cache nested adapter to avoid recreating on every bind
-        var expenseAdapter: ExpenseAdapter? = null
+        var expenseAdapter: HomeRecentAdapter? = null
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryViewHolder {
@@ -51,7 +55,10 @@ class HistoryAdapter : ListAdapter<DailyExpense, HistoryAdapter.HistoryViewHolde
 
         // Reuse cached adapter (avoid recreation on every bind)
         if (holder.expenseAdapter == null) {
-            holder.expenseAdapter = ExpenseAdapter()
+            holder.expenseAdapter = HomeRecentAdapter().apply {
+                onEditClick = { expense -> onExpenseEditClick?.invoke(expense) }
+                onDeleteClick = { expense -> onExpenseDeleteClick?.invoke(expense) }
+            }
             holder.expenseRecyclerView.adapter = holder.expenseAdapter
         }
         

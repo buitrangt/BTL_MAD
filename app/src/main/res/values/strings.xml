@@ -1,5 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Pennywise</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="app_name">Budget Tracker</string>
+    <string name="close">Đóng</string>
+    <string name="confirm">Xác nhận</string>
+    <string name="transaction_type">Loại giao dịch</string>
+    <string name="select_category">Chọn danh mục</string>
+    <string name="select_date">Chọn ngày</string>
+    <string name="note_hint">Ghi chú</string>
+
+    <!-- Category Screen -->
+    <string name="back">Quay lại</string>
+    <string name="category">Danh Mục</string>
+    <string name="more_options">Thêm tùy chọn</string>
+    <string name="search_hint">Tìm danh mục...</string>
+    <string name="search_icon">Tìm kiếm</string>
+    <string name="all_categories">TẤT CẢ DANH MỤC</string>
+    <string name="total_12">tổng 12</string>
+    <string name="add_category">Thêm danh mục</string>
+    <string name="create_new">Tạo mới</string>
+
+    <!-- Select Date -->
+    <string name="transaction_date">NGÀY GIAO DỊCH</string>
+    <string name="prev_month">Tháng trước</string>
+    <string name="next_month">Tháng sau</string>
+    <string name="today">Hôm nay</string>
+    <string name="yesterday">Hôm qua</string>
+    <string name="last_week">Tuần trước</string>
+    <string name="cancel">Hủy</string>
+
+    <!-- Delete Transaction Dialog -->
+    <string name="delete_transaction_title">Xóa giao dịch?</string>
+    <string name="delete_transaction_desc">Bạn có chắc muốn xóa giao dịch này?\nThao tác này không thể hoàn tác và có thể ảnh hưởng đến số dư.</string>
+
+    <!-- Delete Category Dialog -->
+    <string name="delete_category_title">Xóa danh mục?</string>
+    <string name="delete_category_desc">Bạn có chắc chắn muốn xóa danh mục này không? Hành động này không thể hoàn tác</string>
+    <string name="delete">Xóa</string>
+
+    <!-- Add Category -->
+    <string name="category_name">Tên danh mục</string>
+    <string name="category_name_hint">Ví dụ: Ăn uống</string>
+    <string name="category_description">Ghi chú (tùy chọn)</string>
+    <string name="category_description_hint">Mô tả thêm về danh mục này</string>
+    <string name="save">Lưu</string>
 </resources>

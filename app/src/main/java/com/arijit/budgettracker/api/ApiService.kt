@@ -10,43 +10,15 @@ data class ExpenseRequest(
     val amount: Double,
     val category: String,
     val timeStamp: Long,
-    val type: String = "EXPENSE",
-    val name: String = "",
-    val source: String = "MANUAL"
-)
-
-// SMS DTOs
-data class SmsTemplateResponse(
-    val id: Long,
-    val senderPattern: String,
-    val amountRegex: String,
-    val type: String,
-    val bankName: String,
-    val version: Int
-)
-
-data class SmsTransactionRequest(
-    val sender: String,
-    val rawContent: String,
-    val parsedAmount: Double,
-    val parsedCategoryName: String,
-    val type: String,
-    val transactionTime: Long
-)
-
-data class SmsTransactionResponse(
-    val id: Long,
-    val sender: String,
-    val parsedAmount: Double,
-    val type: String,
-    val transactionTime: Long,
-    val status: String
+    val note: String? = null,
+    val type: String? = null
 )
 data class ExpenseResponse(
     val id: Long,
     val amount: Double,
     val category: String,
-    val type: String = "EXPENSE",
+    val type: String? = null,
+    val note: String? = null,
     val timeStamp: Long
 )
 data class TransactionResponse(
@@ -61,6 +33,8 @@ data class TransactionResponse(
 )
 data class StatsResponse(val totalAmount: Double, val categoryBreakdown: Map<String, Double>?)
 data class ResetPasswordRequest(val email: String, val newPassword: String)
+data class CategoryRequest(val name: String, val note: String?)
+data class CategoryResponse(val id: Long, val name: String, val note: String?, val isDefault: Boolean)
 
 interface ApiService {
     // Auth
@@ -93,6 +67,19 @@ interface ApiService {
     @POST("api/expenses/sync")
     suspend fun syncExpenses(@Body requests: List<ExpenseRequest>): Response<List<ExpenseResponse>>
 
+    // Categories
+    @GET("api/categories")
+    suspend fun getAllCategories(): Response<List<CategoryResponse>>
+
+    @POST("api/categories")
+    suspend fun createCategory(@Body request: CategoryRequest): Response<CategoryResponse>
+
+    @PUT("api/categories/{id}")
+    suspend fun updateCategory(@Path("id") id: Long, @Body request: CategoryRequest): Response<CategoryResponse>
+
+    @DELETE("api/categories/{id}")
+    suspend fun deleteCategory(@Path("id") id: Long): Response<Void>
+
     // Stats
     @GET("api/stats/daily")
     suspend fun getDailyStats(): Response<StatsResponse>
@@ -122,13 +109,6 @@ interface ApiService {
 
     @POST("api/auth/reset-password")
     suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<ResponseBody>
-
-    // SMS
-    @GET("api/sms/templates")
-    suspend fun getSmsTemplates(): Response<List<SmsTemplateResponse>>
-
-    @POST("api/sms/transactions/sync")
-    suspend fun syncSmsTransactions(@Body requests: List<SmsTransactionRequest>): Response<List<SmsTransactionResponse>>
 
     @POST("api/finchat/ask")
     suspend fun askFinChat(

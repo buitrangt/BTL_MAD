@@ -5,7 +5,9 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
+    android:background="#F2F4F8"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     tools:context=".MainActivity">
 
     <!-- HEADER -->
@@ -15,7 +17,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_marginHorizontal="22dp"
-        android:layout_marginTop="10dp">
+        android:layout_marginTop="8dp">
 
         <TextView
             android:id="@+id/header_txt"
@@ -23,17 +25,8 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/montserrat_bold"
             android:text="Home"
-            android:textColor="@color/light_green"
-            android:textSize="35sp" />
-
-        <ImageView
-            android:id="@+id/settings"
-            android:layout_width="35dp"
-            android:layout_height="35dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:src="@drawable/settings"
-            app:tint="@color/light_green" />
+            android:textColor="#1A2235"
+            android:textSize="30sp" />
 
     </RelativeLayout>
 
@@ -42,37 +35,27 @@
         android:id="@+id/pager"
         android:layout_below="@id/header"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_nav_container" />
 
     <!-- DOCK -->
-    <androidx.cardview.widget.CardView
+    <FrameLayout
+        android:id="@+id/bottom_nav_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginHorizontal="70dp"
-        android:layout_marginBottom="10dp"
-        app:cardCornerRadius="35dp"
-        app:cardElevation="0dp">
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_bottom_nav_container"
+        android:elevation="8dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
-        <RelativeLayout
+        <include
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#2F5249">
+            android:layout_height="84dp"
+            layout="@layout/layout_custom_bottom_nav" />
 
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/tab_layout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/dark_green"
-                android:paddingVertical="10dp"
-                app:tabIconTint="@color/light_green"
-                app:tabIndicatorColor="@color/lime"
-                app:tabRippleColor="#2CE3DE61"
-                app:tabSelectedTextColor="@color/lime"
-                app:tabTextColor="@color/white" />
-
-        </RelativeLayout>
-
-    </androidx.cardview.widget.CardView>
+    </FrameLayout>
     <include layout="@layout/layout_fab_chat" />
 </RelativeLayout>
