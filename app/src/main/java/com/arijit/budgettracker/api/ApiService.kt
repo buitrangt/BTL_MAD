@@ -58,6 +58,50 @@ data class CategoryRequest(val name: String, val note: String?)
 data class CategoryResponse(val id: Long, val name: String, val note: String?, val isDefault: Boolean)
 data class SmsTemplateDto(val id: Long, val senderPattern: String, val amountRegex: String, val type: String, val bankName: String, val version: Int)
 
+// ======== INSIGHTS DTOs ========
+data class PredictionDto(
+    val month: Int?,
+    val year: Int?,
+    val currentAmount: Double,
+    val predictedAmount: Double,
+    val status: String?
+)
+data class ClassificationDto(
+    val month: Int?,
+    val year: Int?,
+    val level: String,
+    val label: String,
+    val note: String?
+)
+data class AnomalyDto(
+    val categoryId: Long,
+    val categoryName: String,
+    val amountDiff: Double,
+    val percentIncrease: Double
+)
+data class BudgetSuggestionDto(
+    val categoryId: Long,
+    val categoryName: String,
+    val suggestedAmount: Double
+)
+data class InsightsSummaryDto(
+    val prediction: PredictionDto?,
+    val classification: ClassificationDto?,
+    val anomalies: List<AnomalyDto>,
+    val budgetSuggestions: List<BudgetSuggestionDto>
+)
+
+// ======== CHAT DTOs ========
+data class ChatRequest(val message: String, val sessionId: String? = null)
+data class ChatReply(val sessionId: String, val reply: String)
+data class ChatMessageDto(
+    val id: Long,
+    val sessionId: String,
+    val role: String,
+    val content: String,
+    val createdAt: String?
+)
+
 interface ApiService {
     // Auth
     @POST("api/auth/register")
@@ -145,6 +189,24 @@ interface ApiService {
     @GET("api/sms/templates")
     suspend fun getSmsTemplates(): Response<List<SmsTemplateDto>>
 
+    // ===== INSIGHTS =====
+    @GET("api/insights/summary")
+    suspend fun getInsightsSummary(): Response<InsightsSummaryDto>
+
+    @POST("api/insights/refresh")
+    suspend fun refreshInsights(): Response<InsightsSummaryDto>
+
+    // ===== FINCHAT (NEW Gemini-powered) =====
+    @POST("api/finchat/message")
+    suspend fun sendChatMessage(@Body request: ChatRequest): Response<ChatReply>
+
+    @GET("api/finchat/history/{sessionId}")
+    suspend fun getChatHistory(@Path("sessionId") sessionId: String): Response<List<ChatMessageDto>>
+
+    @GET("api/finchat/recent")
+    suspend fun getRecentChatMessages(@Query("limit") limit: Int = 20): Response<List<ChatMessageDto>>
+
+    // ===== FINCHAT (legacy, kept for compat) =====
     @POST("api/finchat/ask")
     suspend fun askFinChat(
         @Query("message") message: String,

@@ -8,15 +8,22 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.arijit.budgettracker.utils.ChatAdapter
+import com.arijit.budgettracker.api.ChatRequest
 import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.models.ChatMessage
+import com.arijit.budgettracker.utils.ChatAdapter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class FinChatActivity : AppCompatActivity() {
     private lateinit var adapter: ChatAdapter
     private val chatList = mutableListOf<ChatMessage>()
     private lateinit var rvChat: RecyclerView
+    private lateinit var btnSend: ImageButton
+
+    /** Persistent across the same chat — server keeps history under this id. */
+    private var sessionId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,22 +31,23 @@ class FinChatActivity : AppCompatActivity() {
 
         rvChat = findViewById(R.id.rvChat)
         val etMessage = findViewById<EditText>(R.id.etMessage)
-        val btnSend = findViewById<ImageButton>(R.id.btnSend)
+        btnSend = findViewById(R.id.btnSend)
 
-        // 1. Khởi tạo RecyclerView
         adapter = ChatAdapter(chatList)
         rvChat.layoutManager = LinearLayoutManager(this).apply {
-            stackFromEnd = true // Tin nhắn mới xuất hiện từ dưới lên
+            stackFromEnd = true
         }
         rvChat.adapter = adapter
 
-        // Tin nhắn chào mừng
-        if (chatList.isEmpty()) {
-            chatList.add(ChatMessage("Chào bạn! Tôi là FinBot, tôi có thể giúp gì cho tài chính của bạn?", true))
-            adapter.notifyItemInserted(0)
-        }
+        // Greeting
+        chatList.add(
+            ChatMessage(
+                "Chào bạn! Tôi là FinBot 🤖\nHãy hỏi tôi bất cứ điều gì về tài chính của bạn — chi tiêu, dự đoán, ngân sách, mẹo tiết kiệm…",
+                true
+            )
+        )
+        adapter.notifyItemInserted(0)
 
-        // 2. Sự kiện nút Send
         btnSend.setOnClickListener {
             val text = etMessage.text.toString().trim()
             if (text.isNotEmpty()) {
@@ -56,19 +64,45 @@ class FinChatActivity : AppCompatActivity() {
         rvChat.scrollToPosition(chatList.size - 1)
     }
 
+    private fun addBotMessage(text: String) {
+        chatList.add(ChatMessage(text, true))
+        adapter.notifyItemInserted(chatList.size - 1)
+        rvChat.smoothScrollToPosition(chatList.size - 1)
+    }
+
     private fun askAi(query: String) {
+        btnSend.isEnabled = false
+        // Loading placeholder
+        addBotMessage("…")
+        val loadingIndex = chatList.size - 1
+
         lifecycleScope.launch {
             try {
-                // Thay '1L' bằng ID user thật nếu Huy đã lưu trong SharedPreferences
-                val response = RetrofitClient.getApiService(this@FinChatActivity).askFinChat(query, 1L)
-                if (response.isSuccessful) {
-                    val botResponse = response.body() ?: "Xin lỗi, tôi không nhận được phản hồi."
-                    chatList.add(ChatMessage(botResponse, true))
-                    adapter.notifyItemInserted(chatList.size - 1)
-                    rvChat.smoothScrollToPosition(chatList.size - 1)
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.getApiService(this@FinChatActivity)
+                        .sendChatMessage(ChatRequest(message = query, sessionId = sessionId))
+                }
+
+                // Remove loading indicator
+                chatList.removeAt(loadingIndex)
+                adapter.notifyItemRemoved(loadingIndex)
+
+                if (response.isSuccessful && response.body() != null) {
+                    val body = response.body()!!
+                    sessionId = body.sessionId
+                    addBotMessage(body.reply)
+                } else {
+                    addBotMessage("Xin lỗi, không nhận được phản hồi (${response.code()}).")
                 }
             } catch (e: Exception) {
+                if (loadingIndex < chatList.size) {
+                    chatList.removeAt(loadingIndex)
+                    adapter.notifyItemRemoved(loadingIndex)
+                }
                 Toast.makeText(this@FinChatActivity, "Lỗi kết nối AI: ${e.message}", Toast.LENGTH_SHORT).show()
+                addBotMessage("Hiện không thể kết nối tới AI. Vui lòng thử lại sau.")
+            } finally {
+                btnSend.isEnabled = true
             }
         }
     }

@@ -55,6 +55,9 @@
         <activity
             android:name=".FinChatActivity"
             android:exported="false" />
+        <activity
+            android:name=".InsightsActivity"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -1,35 +1,58 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.smartexpense.server.controller;
 
-import com.smartexpense.server.service.ExpenseService;
-import com.smartexpense.server.service.FinChatService;
+import com.smartexpense.server.dto.ChatMessageDto;
+import com.smartexpense.server.dto.ChatRequest;
+import com.smartexpense.server.dto.ChatResponse;
+import com.smartexpense.server.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
-/**
- *
- * @author admin
- */
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/finchat")
 @RequiredArgsConstructor
 public class FinChatController {
-    private final FinChatService finChatService;
-    private final ExpenseService expenseService; // Để lấy dữ liệu chi tiêu thật
 
-    @PostMapping("/ask")
-    public ResponseEntity<String> ask(@RequestParam String message, @RequestParam Long userId) {
-        // Lấy danh sách chi tiêu của User để AI có dữ liệu phân tích
-        String context = expenseService.getSummaryByUserId(userId); 
-        
-        String answer = finChatService.getChatResponse(message, context);
-        return ResponseEntity.ok(answer);
+    private final ChatService chatService;
+
+    /**
+     * Send a message in a chat session. If sessionId is null, server creates a new one.
+     */
+    @PostMapping("/message")
+    public ResponseEntity<ChatResponse> sendMessage(
+            Authentication auth,
+            @RequestBody ChatRequest request
+    ) {
+        ChatResponse response = chatService.sendMessage(
+                auth.getName(),
+                request.getSessionId(),
+                request.getMessage()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Get full message history for a session.
+     */
+    @GetMapping("/history/{sessionId}")
+    public ResponseEntity<List<ChatMessageDto>> getHistory(
+            Authentication auth,
+            @PathVariable String sessionId
+    ) {
+        return ResponseEntity.ok(chatService.getSessionHistory(auth.getName(), sessionId));
+    }
+
+    /**
+     * Get most recent messages across all sessions (for sidebar/list).
+     */
+    @GetMapping("/recent")
+    public ResponseEntity<List<ChatMessageDto>> getRecent(
+            Authentication auth,
+            @RequestParam(defaultValue = "20") int limit
+    ) {
+        return ResponseEntity.ok(chatService.getRecentMessages(auth.getName(), limit));
     }
 }
