@@ -10,8 +10,6 @@ import androidx.core.app.NotificationCompat
 import com.arijit.budgettracker.MainActivity
 import com.arijit.budgettracker.R
 import com.arijit.budgettracker.utils.CurrencyPrefs
-import java.text.NumberFormat
-import java.util.Locale
 
 object SmsNotificationHelper {
 
@@ -40,17 +38,16 @@ object SmsNotificationHelper {
         category: String,
         bankName: String
     ) {
-        val currencySymbol = CurrencyPrefs.getSymbol(context)
-        val formattedAmount = NumberFormat.getNumberInstance(Locale.US).format(amount)
+        val formattedAmount = CurrencyPrefs.format(amount)
 
         val title: String
         val text: String
 
         if (type == "INCOME") {
-            title = "Nhận $currencySymbol$formattedAmount"
+            title = "Nhận $formattedAmount"
             text = "Từ $bankName"
         } else {
-            title = "Chi $currencySymbol$formattedAmount"
+            title = "Chi $formattedAmount"
             text = "$category - $bankName"
         }
 

@@ -300,9 +300,9 @@ class HistoryFragment : Fragment() {
             }
             .sumOf { it.amount }
 
-        tvMonthIncome.text = "${numberFormatter.format(monthIncome.toLong())} đ"
-        tvMonthExpense.text = "${numberFormatter.format(monthExpense.toLong())} đ"
-        tvMonthSavings.text = "${numberFormatter.format((monthIncome - monthExpense).toLong())} đ"
+        tvMonthIncome.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(monthIncome)
+        tvMonthExpense.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(monthExpense)
+        tvMonthSavings.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(monthIncome - monthExpense)
     }
 
     private fun groupExpensesByDate(expenses: List<Expense>): List<DailyExpense> {
@@ -382,9 +382,9 @@ class HistoryFragment : Fragment() {
             }
             .sumOf { it.amount }
 
-        tvMonthIncome.text = "${numberFormatter.format(monthIncome.toLong())} đ"
-        tvMonthExpense.text = "${numberFormatter.format(monthExpense.toLong())} đ"
-        tvMonthSavings.text = "${numberFormatter.format((monthIncome - monthExpense).toLong())} đ"
+        tvMonthIncome.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(monthIncome)
+        tvMonthExpense.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(monthExpense)
+        tvMonthSavings.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(monthIncome - monthExpense)
 
         updateMonthLabels(selectedDate)
     }

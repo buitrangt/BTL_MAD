@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.arijit.budgettracker.LoginActivity
 import com.arijit.budgettracker.R
 import com.arijit.budgettracker.models.ProfileViewModel
+import com.arijit.budgettracker.utils.CurrencyPrefs
 import com.arijit.budgettracker.utils.TokenManager
 import com.arijit.budgettracker.utils.Vibration
 
@@ -30,8 +31,8 @@ class ProfileFragment : Fragment() {
         val btnLogout = view.findViewById<View>(R.id.btnLogout)
 
         val vm = ViewModelProvider(this)[ProfileViewModel::class.java]
-        vm.balance.observe(viewLifecycleOwner) { tvBalance.text = "₫%.2f".format(it) }
-        vm.totalExpense.observe(viewLifecycleOwner) { tvSpent.text = "₫%.2f".format(it) }
+        vm.balance.observe(viewLifecycleOwner) { tvBalance.text = CurrencyPrefs.format(it) }
+        vm.totalExpense.observe(viewLifecycleOwner) { tvSpent.text = CurrencyPrefs.format(it) }
 
         btnLogout.setOnClickListener {
             Vibration.vibrate(requireContext(), 50)

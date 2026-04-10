@@ -21,7 +21,6 @@ import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
-import java.text.NumberFormat
 import java.util.Locale
 
 class StatsFragment : Fragment() {
@@ -78,11 +77,8 @@ class StatsFragment : Fragment() {
     }
 
     private fun renderAll(data: WeeklyOverviewResponse) {
-        val sym = CurrencyPrefs.getSymbol(requireContext())
-        val fmt = NumberFormat.getInstance(Locale("vi", "VN"))
-
         // Total amount
-        totalAmount.text = "${sym}${fmt.format(data.totalAmount.toLong())}"
+        totalAmount.text = CurrencyPrefs.format(data.totalAmount)
 
         // Badge percent
         val pct = data.percentChange
@@ -100,10 +96,10 @@ class StatsFragment : Fragment() {
         renderBarChart(data.dailyBreakdown)
 
         // Pie chart
-        renderPieChart(data.categoryBreakdown, data.totalAmount, sym, fmt)
+        renderPieChart(data.categoryBreakdown, data.totalAmount)
 
         // Category list
-        renderCategoryList(data.categoryBreakdown, sym, fmt)
+        renderCategoryList(data.categoryBreakdown)
     }
 
     private fun renderBarChart(daily: Map<String, Double>) {
@@ -164,9 +160,7 @@ class StatsFragment : Fragment() {
 
     private fun renderPieChart(
         categories: List<CategoryStat>,
-        total: Double,
-        sym: String,
-        fmt: NumberFormat
+        total: Double
     ) {
         val entries = ArrayList<PieEntry>()
         val colors = ArrayList<Int>()
@@ -190,7 +184,7 @@ class StatsFragment : Fragment() {
         pieChart.holeRadius = 65f
         pieChart.setHoleColor(Color.TRANSPARENT)
         pieChart.setTransparentCircleAlpha(0)
-        pieChart.setCenterText("Total\n${sym}${fmt.format(total.toLong())}")
+        pieChart.setCenterText("Total\n${CurrencyPrefs.format(total)}")
         pieChart.setCenterTextSize(11f)
         pieChart.setCenterTextColor(Color.parseColor("#1A1A1A"))
         pieChart.setCenterTextTypeface(ResourcesCompat.getFont(requireContext(), R.font.montserrat_bold))
@@ -248,9 +242,7 @@ class StatsFragment : Fragment() {
     }
 
     private fun renderCategoryList(
-        categories: List<CategoryStat>,
-        sym: String,
-        fmt: NumberFormat
+        categories: List<CategoryStat>
     ) {
         categoryList.removeAllViews()
         val colorNames = listOf("green", "red", "blue", "orange", "purple", "cyan", "brown", "gray")
@@ -261,7 +253,7 @@ class StatsFragment : Fragment() {
                 .inflate(R.layout.item_category_stat, categoryList, false)
 
             item.findViewById<TextView>(R.id.category_name).text = cat.category
-            item.findViewById<TextView>(R.id.category_amount).text = "-${sym}${fmt.format(cat.amount.toLong())}"
+            item.findViewById<TextView>(R.id.category_amount).text = "-${CurrencyPrefs.format(cat.amount)}"
 
             val progressBar = item.findViewById<View>(R.id.progress_fill)
             val params = progressBar.layoutParams as LinearLayout.LayoutParams

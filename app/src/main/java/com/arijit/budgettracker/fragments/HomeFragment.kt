@@ -86,15 +86,15 @@ class HomeFragment : Fragment() {
 
 
         viewModel.todayAmount.observe(viewLifecycleOwner) {
-            todayAmt.text = "₫%.2f".format(it)
+            todayAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it)
         }
 
         viewModel.weekAmount.observe(viewLifecycleOwner) {
-            thisWeekAmt.text = "₫%.2f".format(it)
+            thisWeekAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it)
         }
 
         viewModel.monthAmount.observe(viewLifecycleOwner) {
-            thisMonthAmt.text = "₫%.2f".format(it)
+            thisMonthAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it)
         }
 
         return view
@@ -104,9 +104,9 @@ class HomeFragment : Fragment() {
         super.onResume()
 
         // Force refresh amounts display
-        viewModel.todayAmount.value?.let { todayAmt.text = "₫%.2f".format(it) }
-        viewModel.weekAmount.value?.let { thisWeekAmt.text = "₫%.2f".format(it) }
-        viewModel.monthAmount.value?.let { thisMonthAmt.text = "₫%.2f".format(it) }
+        viewModel.todayAmount.value?.let { todayAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it) }
+        viewModel.weekAmount.value?.let { thisWeekAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it) }
+        viewModel.monthAmount.value?.let { thisMonthAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it) }
     }
 
     private fun showDeleteConfirmDialog(expense: com.arijit.budgettracker.db.Expense) {

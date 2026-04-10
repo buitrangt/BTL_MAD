@@ -9,10 +9,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.arijit.budgettracker.R
 import com.arijit.budgettracker.db.Expense
-import java.text.NumberFormat
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.arijit.budgettracker.utils.CurrencyPrefs
 
 class ExpenseAdapter(
     var onItemLongClick: ((Expense) -> Unit)? = null,
@@ -39,14 +36,13 @@ class ExpenseAdapter(
         fun bind(expense: Expense) {
             textViewCategory.text = expense.category
 
-            val formatter = NumberFormat.getInstance(Locale("vi", "VN"))
-            val formattedAmount = formatter.format(expense.amount.toLong())
+            val formattedAmount = CurrencyPrefs.format(expense.amount)
 
             if (expense.type == "INCOME") {
-                textViewAmount.text = "+$formattedAmount đ"
+                textViewAmount.text = "+$formattedAmount"
                 textViewAmount.setTextColor(androidx.core.content.ContextCompat.getColor(itemView.context, android.R.color.holo_green_dark))
             } else {
-                textViewAmount.text = "-$formattedAmount đ"
+                textViewAmount.text = "-$formattedAmount"
                 textViewAmount.setTextColor(androidx.core.content.ContextCompat.getColor(itemView.context, android.R.color.holo_red_dark))
             }
 
