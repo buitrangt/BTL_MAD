@@ -87,4 +87,21 @@ public class AuthServiceImpl implements AuthService {
         userRepository.save(user);
 
     }
+
+    @Override
+    public void changePassword(String email, String oldPassword, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+            throw new RuntimeException("Mật khẩu hiện tại không đúng");
+        }
+
+        if (oldPassword.equals(newPassword)) {
+            throw new RuntimeException("Mật khẩu mới phải khác mật khẩu cũ");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }

@@ -11,13 +11,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.arijit.budgettracker.api.ExpenseRequest
+import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.db.Expense
-import com.arijit.budgettracker.db.ExpenseDatabase
-import com.arijit.budgettracker.utils.SyncManager
 import com.arijit.budgettracker.utils.Vibration
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.datepicker.MaterialDatePicker
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -168,56 +169,6 @@ class AddTransActivity : AppCompatActivity() {
         tvCategory.text = if (selectedCategory.isEmpty()) "CHỌN DANH MỤC" else selectedCategory
     }
 
-    private fun loadAndShowCategories() {
-        lifecycleScope.launch {
-            try {
-                val db = ExpenseDatabase.getDatabase(applicationContext)
-                val categoryDao = db.categoryDao()
-                val categories = categoryDao.getCategoriesByType()
-                
-                showCategoryBottomSheet(categories.map { it.name })
-            } catch (e: Exception) {
-                Toast.makeText(this@AddTransActivity, "Lỗi tải danh mục", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun showCategoryBottomSheet(categoryNames: List<String>) {
-        val bottomSheet = BottomSheetDialog(this)
-        val view = layoutInflater.inflate(R.layout.catg_layout, null)
-        bottomSheet.setContentView(view)
-
-        // Clear existing views
-        val container = view.findViewById<LinearLayout>(R.id.category_container)
-        container?.removeAllViews()
-
-        // Add category items dynamically
-        for (categoryName in categoryNames) {
-            val categoryView = layoutInflater.inflate(R.layout.item_category, container, false)
-            val categoryText = categoryView.findViewById<TextView>(R.id.category_name)
-            categoryText.text = categoryName
-
-            categoryView.setOnClickListener {
-                selectedCategory = categoryName
-                bottomSheet.dismiss()
-            }
-            container?.addView(categoryView)
-        }
-
-        // Add "Thêm danh mục" button
-        val addCategoryView = layoutInflater.inflate(R.layout.item_add_category, container, false)
-        addCategoryView.setOnClickListener {
-            bottomSheet.dismiss()
-            // Open AddCategoryActivity
-            val intent = android.content.Intent(this, AddCategoryActivity::class.java)
-            intent.putExtra("type", transactionType)
-            startActivity(intent)
-        }
-        container?.addView(addCategoryView)
-
-        bottomSheet.show()
-    }
-
     private fun setupDatePicker() {
         calendarFooter.setOnClickListener {
             Vibration.vibrate(this, 50)
@@ -319,59 +270,49 @@ class AddTransActivity : AppCompatActivity() {
     }
 
     private fun saveTransaction() {
+        confirmBtn.isEnabled = false
         lifecycleScope.launch {
-            val db = ExpenseDatabase.getDatabase(applicationContext)
-            val dao = db.expenseDao()
-            
-            if (isEditMode) {
-                // Update existing expense
-                val existing = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    dao.getById(editingExpenseId) ?: (editingRemoteId?.let { dao.getByRemoteId(it) })
-                }
-                val resolvedId = existing?.id ?: editingExpenseId
-                val resolvedRemoteId = existing?.remoteId ?: editingRemoteId
-                val updated = Expense(
-                    id = resolvedId,
-                    amount = selectedAmount.toDoubleOrNull() ?: 0.0,
-                    name = selectedCategory.trim(),
-                    category = selectedCategory.trim(),
-                    note = selectedNote,
-                    type = transactionType,
-                    timeStamp = selectedDate,
-                    remoteId = resolvedRemoteId,
-                    localCreatedAt = existing?.localCreatedAt ?: System.currentTimeMillis(),
-                    synced = false
-                )
+            val api = RetrofitClient.getApiService(applicationContext)
+            val request = ExpenseRequest(
+                amount = selectedAmount.toDoubleOrNull() ?: 0.0,
+                category = selectedCategory.trim(),
+                timeStamp = selectedDate,
+                note = selectedNote.takeIf { it.isNotBlank() },
+                type = transactionType
+            )
 
-                val oldExpense = existing ?: originalExpense
-                val syncedToServer = if (oldExpense != null) {
-                    SyncManager.updateExpenseIfOnline(applicationContext, oldExpense, updated)
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    if (isEditMode && editingRemoteId != null) {
+                        api.updateExpense(editingRemoteId!!, request)
+                    } else {
+                        api.createExpense(request)
+                    }
+                }
+
+                if (response.isSuccessful) {
+                    Toast.makeText(
+                        this@AddTransActivity,
+                        if (isEditMode) "Cập nhật thành công" else "Đã thêm giao dịch",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    finish()
                 } else {
-                    false
+                    Toast.makeText(
+                        this@AddTransActivity,
+                        "Lỗi: ${response.code()}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    confirmBtn.isEnabled = true
                 }
-
-                dao.updateExpense(updated.copy(synced = syncedToServer))
-                if (!syncedToServer) {
-                    Toast.makeText(this@AddTransActivity, "Đã lưu local, chưa đồng bộ sửa đổi lên server", Toast.LENGTH_SHORT).show()
-                    SyncManager.syncIfOnline(applicationContext)
-                }
-                Toast.makeText(this@AddTransActivity, "Cập nhật thành công", Toast.LENGTH_SHORT).show()
-            } else {
-                // Insert new expense
-                val expense = Expense(
-                    amount = selectedAmount.toDoubleOrNull() ?: 0.0,
-                    name = selectedCategory.trim(),
-                    category = selectedCategory.trim(),
-                    note = selectedNote,
-                    type = transactionType,
-                    timeStamp = selectedDate
-                )
-                dao.insertExpense(expense)
-
-                SyncManager.syncIfOnline(applicationContext)
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@AddTransActivity,
+                    "Lỗi kết nối: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+                confirmBtn.isEnabled = true
             }
-
-            finish()
         }
     }
 }

@@ -1,58 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F2F4F8"
-    android:clipToPadding="false"
-    android:fillViewport="true"
-    android:paddingBottom="100dp"
-    android:scrollbars="none"
+    android:orientation="vertical"
+    android:paddingHorizontal="20dp"
+    android:paddingTop="16dp"
     tools:context=".fragments.HomeFragment">
 
-    <LinearLayout
+    <!-- ============ HEADER: Greeting + Avatar ============ -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_welcome"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_regular"
+                android:text="Chào mừng trở lại,"
+                android:textColor="#8E96A3"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tv_welcome_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="@font/montserrat_bold"
+                android:text="User"
+                android:textColor="#1A2235"
+                android:textSize="24sp" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/bg_avatar_header">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_bot_avatar"
+                android:contentDescription="Avatar" />
+        </FrameLayout>
+    </RelativeLayout>
+
+    <!-- ============ TODAY CARD ============ -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/today_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingStart="20dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="20dp">
+        android:layout_marginTop="16dp"
+        app:cardCornerRadius="22dp"
+        app:cardElevation="6dp">
 
-        <TextView
-            android:id="@+id/tv_welcome"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/montserrat_regular"
-            android:text="Chào mừng trở lại,"
-            android:textColor="#8E96A3"
-            android:textSize="13sp" />
-
-        <TextView
-            android:id="@+id/tv_welcome_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:fontFamily="@font/montserrat_bold"
-            android:text="User"
-            android:textColor="#1A2235"
-            android:textSize="30sp" />
-
-        <androidx.cardview.widget.CardView
-            android:id="@+id/today_card"
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            app:cardCornerRadius="22dp"
-            app:cardElevation="0dp">
+            android:background="@drawable/bg_home_today"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="18dp">
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/bg_home_today"
-                android:orientation="vertical"
-                android:paddingHorizontal="20dp"
-                android:paddingVertical="18dp">
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -71,179 +95,250 @@
                     android:maxLines="1"
                     android:text="₫0.00"
                     android:textColor="#FFFFFF"
-                    android:textSize="42sp" />
+                    android:textSize="32sp" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_avatar_ring">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:src="@android:drawable/ic_menu_today"
+                    android:tint="#10B981" />
+            </FrameLayout>
+        </RelativeLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- ============ WEEK + MONTH CARDS ============ -->
+    <LinearLayout
+        android:id="@+id/week_and_month_cards"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/this_week_card"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <FrameLayout
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/bg_icon_circle_blue">
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="center"
+                        android:src="@android:drawable/ic_menu_week"
+                        android:tint="#1976D2" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/montserrat_regular"
+                    android:text="Tuần này"
+                    android:textColor="#8D96A5"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/this_week_amt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/montserrat_bold"
+                    android:maxLines="1"
+                    android:text="₫0.00"
+                    android:textColor="#1A2235"
+                    android:textSize="18sp" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <LinearLayout
-            android:id="@+id/week_and_month_cards"
-            android:layout_width="match_parent"
+        <androidx.cardview.widget.CardView
+            android:id="@+id/this_month_card"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:orientation="horizontal"
-            android:weightSum="2">
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp">
 
-            <androidx.cardview.widget.CardView
-                android:id="@+id/this_week_card"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="14dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/bg_home_stat_card"
-                    android:orientation="vertical"
-                    android:padding="14dp">
+                <FrameLayout
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@drawable/bg_icon_circle_orange">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/montserrat_regular"
-                        android:text="Tuần này"
-                        android:textColor="#8D96A5"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/this_week_amt"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:fontFamily="@font/montserrat_bold"
-                        android:text="₫0.00"
-                        android:textColor="#1A2235"
-                        android:textSize="30sp" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
-                android:id="@+id/this_month_card"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/bg_home_stat_card"
-                    android:orientation="vertical"
-                    android:padding="14dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/montserrat_regular"
-                        android:text="Tháng này"
-                        android:textColor="#8D96A5"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/this_month_amt"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:fontFamily="@font/montserrat_bold"
-                        android:text="₫0.00"
-                        android:textColor="#1A2235"
-                        android:textSize="30sp" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal"
-            android:weightSum="2">
-
-            <androidx.cardview.widget.CardView
-                android:id="@+id/add_expense_btn"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:clickable="true"
-                android:focusable="true"
-                app:cardBackgroundColor="#0CAE70"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="0dp">
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="center"
+                        android:src="@android:drawable/ic_menu_my_calendar"
+                        android:tint="#F57C00" />
+                </FrameLayout>
 
                 <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/montserrat_regular"
+                    android:text="Tháng này"
+                    android:textColor="#8D96A5"
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/this_month_amt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
                     android:fontFamily="@font/montserrat_bold"
-                    android:gravity="center"
+                    android:maxLines="1"
+                    android:text="₫0.00"
+                    android:textColor="#1A2235"
+                    android:textSize="18sp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
+
+    <!-- ============ ACTION BUTTONS ============ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/add_expense_btn"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_action_primary"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/montserrat_bold"
                     android:text="+ Thêm chi tiêu/thu nhập"
                     android:textColor="#FFFFFF"
-                    android:textSize="12sp" />
-            </androidx.cardview.widget.CardView>
+                    android:textSize="11sp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
-            <androidx.cardview.widget.CardView
-                android:id="@+id/btn_ai_analysis"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                app:cardBackgroundColor="#0CAE70"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="0dp">
+        <androidx.cardview.widget.CardView
+            android:id="@+id/btn_ai_analysis"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_action_secondary"
+                android:gravity="center"
+                android:orientation="horizontal">
 
                 <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:fontFamily="@font/montserrat_bold"
-                    android:gravity="center"
-                    android:text="Phân tích thông minh"
-                    android:textColor="#FFFFFF"
-                    android:textSize="12sp" />
-            </androidx.cardview.widget.CardView>
-        </LinearLayout>
+                    android:text="✦ Phân tích thông minh"
+                    android:textColor="#10B981"
+                    android:textSize="11sp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
+    <!-- ============ RECENT TRANSACTIONS HEADER ============ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/recent_txt"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_weight="1"
+            android:fontFamily="@font/montserrat_bold"
+            android:text="Giao dịch gần đây"
+            android:textColor="#1A2235"
+            android:textSize="18sp" />
 
-            <TextView
-                android:id="@+id/recent_txt"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="@font/montserrat_bold"
-                android:text="Giao dịch gần đây"
-                android:textColor="#1A2235"
-                android:textSize="24sp" />
+        <TextView
+            android:id="@+id/tv_see_all"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/montserrat_bold"
+            android:text="Xem tất cả ›"
+            android:textColor="#10B981"
+            android:textSize="13sp" />
+    </LinearLayout>
 
-            <TextView
-                android:id="@+id/tv_see_all"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/montserrat_regular"
-                android:text="Xem tất cả"
-                android:textColor="#3A8CFF"
-                android:textSize="14sp" />
-        </LinearLayout>
+    <!-- ============ RECENT TRANSACTIONS LIST (only this scrolls) ============ -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_weight="1"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="0dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recent_rv"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:nestedScrollingEnabled="false" />
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingTop="6dp"
+            android:paddingBottom="110dp" />
+    </androidx.cardview.widget.CardView>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="100dp" />
-
-    </LinearLayout>
-
-</androidx.core.widget.NestedScrollView>
+</LinearLayout>

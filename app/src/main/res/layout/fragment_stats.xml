@@ -1,165 +1,156 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F6F8"
-    android:scrollbars="none"
+    android:background="#F2F4F8"
+    android:orientation="vertical"
+    android:padding="16dp"
     tools:context=".fragments.StatsFragment">
 
+    <!-- ============ TOTAL CARD + BAR CHART (fixed) ============ -->
     <LinearLayout
+        android:id="@+id/total_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_card_white"
         android:orientation="vertical"
-        android:padding="16dp"
-        android:paddingBottom="100dp">
+        android:padding="16dp">
 
-        <!-- Total Card + Bar Chart -->
-        <LinearLayout
-            android:id="@+id/total_card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_card_white"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:layout_marginBottom="12dp">
-
-            <!-- Header: label + badge -->
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp">
-
-                <TextView
-                    android:id="@+id/total_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Tổng chi tiêu"
-                    android:textColor="#999999"
-                    android:textSize="11sp"
-                    android:fontFamily="@font/montserrat_regular" />
-
-                <TextView
-                    android:id="@+id/badge_percent"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:background="@drawable/bg_badge_percent"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="3dp"
-                    android:text="↗ +12%"
-                    android:textColor="#E53935"
-                    android:textSize="10sp"
-                    android:fontFamily="@font/montserrat_bold" />
-            </RelativeLayout>
-
-            <!-- Total amount -->
-            <TextView
-                android:id="@+id/total_amount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="₫0"
-                android:textColor="#1A1A1A"
-                android:textSize="26sp"
-                android:fontFamily="@font/montserrat_bold"
-                android:layout_marginBottom="16dp" />
-
-            <!-- Bar chart container -->
-            <LinearLayout
-                android:id="@+id/bar_chart_container"
-                android:layout_width="match_parent"
-                android:layout_height="80dp"
-                android:orientation="horizontal"
-                android:gravity="bottom"
-                android:layout_marginBottom="8dp" />
-
-            <!-- Week labels -->
-            <LinearLayout
-                android:id="@+id/week_labels_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-        </LinearLayout>
-
-        <!-- Distribution Card (Donut) -->
-        <LinearLayout
-            android:id="@+id/distribution_card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_card_white"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:layout_marginBottom="12dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Phân bổ chi tiêu"
-                android:textColor="#1A1A1A"
-                android:textSize="13sp"
-                android:fontFamily="@font/montserrat_bold"
-                android:layout_marginBottom="16dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <!-- Pie chart -->
-                <com.github.mikephil.charting.charts.PieChart
-                    android:id="@+id/pie_chart"
-                    android:layout_width="120dp"
-                    android:layout_height="120dp" />
-
-                <!-- Legend -->
-                <LinearLayout
-                    android:id="@+id/legend_container"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:layout_marginStart="20dp" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Top Categories header -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp">
+            android:layout_marginBottom="4dp">
 
             <TextView
+                android:id="@+id/total_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Danh mục chi nhiều nhất"
-                android:textColor="#1A1A1A"
-                android:textSize="13sp"
-                android:fontFamily="@font/montserrat_bold" />
+                android:fontFamily="@font/montserrat_regular"
+                android:text="Tổng chi tiêu"
+                android:textColor="#999999"
+                android:textSize="11sp" />
 
             <TextView
-                android:id="@+id/view_all"
+                android:id="@+id/badge_percent"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:text="Xem tất cả"
-                android:textColor="#1976D2"
-                android:textSize="11sp"
-                android:fontFamily="@font/montserrat_regular" />
+                android:background="@drawable/bg_badge_percent"
+                android:fontFamily="@font/montserrat_bold"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:text="↗ +12%"
+                android:textColor="#E53935"
+                android:textSize="10sp" />
         </RelativeLayout>
 
-        <!-- Category list -->
+        <TextView
+            android:id="@+id/total_amount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="@font/montserrat_bold"
+            android:text="₫0"
+            android:textColor="#1A1A1A"
+            android:textSize="26sp" />
+
+        <LinearLayout
+            android:id="@+id/bar_chart_container"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:layout_marginBottom="8dp"
+            android:gravity="bottom"
+            android:orientation="horizontal" />
+
+        <LinearLayout
+            android:id="@+id/week_labels_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+    </LinearLayout>
+
+    <!-- ============ DISTRIBUTION CARD (Donut, fixed) ============ -->
+    <LinearLayout
+        android:id="@+id/distribution_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/bg_card_white"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="@font/montserrat_bold"
+            android:text="Phân bổ chi tiêu"
+            android:textColor="#1A1A1A"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.github.mikephil.charting.charts.PieChart
+                android:id="@+id/pie_chart"
+                android:layout_width="120dp"
+                android:layout_height="120dp" />
+
+            <LinearLayout
+                android:id="@+id/legend_container"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_weight="1"
+                android:orientation="vertical" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ============ TOP CATEGORIES HEADER (fixed) ============ -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/montserrat_bold"
+            android:text="Danh mục chi nhiều nhất"
+            android:textColor="#1A1A1A"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/view_all"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:fontFamily="@font/montserrat_bold"
+            android:text="Xem tất cả ›"
+            android:textColor="#10B981"
+            android:textSize="11sp" />
+    </RelativeLayout>
+
+    <!-- ============ CATEGORY LIST (only this scrolls) ============ -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_card_white"
+        android:clipToPadding="false"
+        android:paddingBottom="110dp"
+        android:scrollbars="none">
+
         <LinearLayout
             android:id="@+id/category_list"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_card_white"
             android:orientation="vertical" />
+    </androidx.core.widget.NestedScrollView>
 
-        <!-- Bottom spacer for nav bar -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="80dp" />
-
-    </LinearLayout>
-</ScrollView>
+</LinearLayout>

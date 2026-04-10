@@ -38,12 +38,22 @@ data class WeeklyOverviewResponse(
     val dailyBreakdown: Map<String, Double>,
     val categoryBreakdown: List<CategoryStat>
 )
+data class HomeOverviewResponse(
+    val todayAmount: Double,
+    val weekAmount: Double,
+    val monthAmount: Double,
+    val monthIncome: Double,
+    val monthExpense: Double,
+    val monthSavings: Double,
+    val recentTransactions: List<TransactionResponse>
+)
 data class CategoryStat(
     val category: String,
     val amount: Double,
     val percent: Double
 )
 data class ResetPasswordRequest(val email: String, val newPassword: String)
+data class ChangePasswordRequest(val oldPassword: String, val newPassword: String)
 data class CategoryRequest(val name: String, val note: String?)
 data class CategoryResponse(val id: Long, val name: String, val note: String?, val isDefault: Boolean)
 data class SmsTemplateDto(val id: Long, val senderPattern: String, val amountRegex: String, val type: String, val bankName: String, val version: Int)
@@ -93,6 +103,9 @@ interface ApiService {
     suspend fun deleteCategory(@Path("id") id: Long): Response<Void>
 
     // Stats
+    @GET("api/stats/home-overview")
+    suspend fun getHomeOverview(): Response<HomeOverviewResponse>
+
     @GET("api/stats/weekly-overview")
     suspend fun getWeeklyOverview(): Response<WeeklyOverviewResponse>
 
@@ -124,6 +137,9 @@ interface ApiService {
 
     @POST("api/auth/reset-password")
     suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<ResponseBody>
+
+    @POST("api/auth/change-password")
+    suspend fun changePassword(@Body request: ChangePasswordRequest): Response<ResponseBody>
 
     // SMS Templates
     @GET("api/sms/templates")

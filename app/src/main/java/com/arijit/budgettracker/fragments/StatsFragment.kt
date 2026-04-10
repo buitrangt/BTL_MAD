@@ -12,11 +12,14 @@ import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.arijit.budgettracker.R
 import com.arijit.budgettracker.api.CategoryStat
 import com.arijit.budgettracker.api.WeeklyOverviewResponse
 import com.arijit.budgettracker.models.StatsViewModel
 import com.arijit.budgettracker.utils.CurrencyPrefs
+import com.arijit.budgettracker.utils.SyncManager
+import kotlinx.coroutines.launch
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
@@ -61,6 +64,11 @@ class StatsFragment : Fragment() {
 
         viewModel = ViewModelProvider(this)[StatsViewModel::class.java]
 
+        // "Xem tất cả" → switch to History tab
+        view.findViewById<View>(R.id.view_all).setOnClickListener {
+            (activity as? com.arijit.budgettracker.MainActivity)?.navigateToHistory()
+        }
+
         viewModel.weeklyOverview.observe(viewLifecycleOwner) { data ->
             if (data != null) renderAll(data)
         }
@@ -74,6 +82,15 @@ class StatsFragment : Fragment() {
         viewModel.loadWeeklyOverview()
 
         return view
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Push any pending local changes (e.g. from SMS receiver) and reload from server
+        lifecycleScope.launch {
+            SyncManager.syncIfOnline(requireContext().applicationContext)
+            viewModel.loadWeeklyOverview()
+        }
     }
 
     private fun renderAll(data: WeeklyOverviewResponse) {
@@ -107,16 +124,19 @@ class StatsFragment : Fragment() {
         weekLabelsContainer.removeAllViews()
 
         val maxVal = daily.values.maxOrNull() ?: 1.0
-        val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+        // English keys must match backend response
+        val dayKeys = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+        val dayLabels = listOf("T2", "T3", "T4", "T5", "T6", "T7", "CN")
         val tf = ResourcesCompat.getFont(requireContext(), R.font.montserrat_regular)
 
-        // Find today's day
-        val todayCal = java.util.Calendar.getInstance()
-        val todayDayFormat = java.text.SimpleDateFormat("EEE", Locale.ENGLISH)
-        val todayLabel = todayDayFormat.format(todayCal.time)
+        // Compute today's index (Mon=0..Sun=6) regardless of device locale
+        val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Bangkok"))
+        cal.firstDayOfWeek = java.util.Calendar.MONDAY
+        // Calendar.DAY_OF_WEEK: Sunday=1..Saturday=7. Convert to Mon=0..Sun=6.
+        val todayIdx = (cal.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7
 
-        for (day in days) {
-            val amount = daily[day] ?: 0.0
+        for ((idx, key) in dayKeys.withIndex()) {
+            val amount = daily[key] ?: 0.0
             val heightRatio = if (maxVal > 0) (amount / maxVal) else 0.0
             val barHeight = (heightRatio * 70).toInt().coerceAtLeast(4)
 
@@ -127,21 +147,20 @@ class StatsFragment : Fragment() {
             barParams.marginEnd = dpToPx(4)
             bar.layoutParams = barParams
             bar.setBackgroundResource(
-                if (day == todayLabel || isPastDay(day, todayLabel))
-                    R.drawable.bg_bar_active
+                if (idx <= todayIdx) R.drawable.bg_bar_active
                 else R.drawable.bg_bar_inactive
             )
             barChartContainer.addView(bar)
 
-            // Label
+            // Label (Vietnamese)
             val label = TextView(requireContext())
             val labelParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             label.layoutParams = labelParams
-            label.text = day
+            label.text = dayLabels[idx]
             label.textSize = 10f
             label.gravity = Gravity.CENTER
             label.typeface = tf
-            if (day == todayLabel) {
+            if (idx == todayIdx) {
                 label.setTextColor(Color.parseColor("#1A8754"))
                 label.typeface = ResourcesCompat.getFont(requireContext(), R.font.montserrat_bold)
             } else {
@@ -149,13 +168,6 @@ class StatsFragment : Fragment() {
             }
             weekLabelsContainer.addView(label)
         }
-    }
-
-    private fun isPastDay(day: String, today: String): Boolean {
-        val order = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-        val dayIdx = order.indexOf(day)
-        val todayIdx = order.indexOf(today)
-        return dayIdx < todayIdx
     }
 
     private fun renderPieChart(

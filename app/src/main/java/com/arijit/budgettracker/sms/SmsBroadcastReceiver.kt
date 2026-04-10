@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
+import android.util.Log
 import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.db.ExpenseDatabase
 import com.arijit.budgettracker.db.SmsTransactionEntity
@@ -15,13 +16,18 @@ import kotlinx.coroutines.launch
 class SmsBroadcastReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
+        Log.d("SmsReceiver", "onReceive action=${intent.action}")
         if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
 
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
-        if (messages.isNullOrEmpty()) return
+        if (messages.isNullOrEmpty()) {
+            Log.w("SmsReceiver", "No messages in intent")
+            return
+        }
 
         val sender = messages[0].displayOriginatingAddress ?: return
         val fullMessage = messages.joinToString("") { it.displayMessageBody ?: "" }
+        Log.d("SmsReceiver", "From=$sender body=$fullMessage")
         if (fullMessage.isBlank()) return
 
         val pendingResult = goAsync()
@@ -39,8 +45,14 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
     private suspend fun processSms(context: Context, sender: String, smsContent: String) {
         val db = ExpenseDatabase.getDatabase(context)
         val templates = db.smsTemplateDao().getActiveTemplates()
+        Log.d("SmsReceiver", "Loaded ${templates.size} templates")
 
-        val parsed = SmsParser.parse(smsContent, sender, templates) ?: return
+        val parsed = SmsParser.parse(smsContent, sender, templates)
+        if (parsed == null) {
+            Log.w("SmsReceiver", "Parse failed for sender=$sender")
+            return
+        }
+        Log.d("SmsReceiver", "Parsed amount=${parsed.amount} type=${parsed.type} bank=${parsed.bankName}")
 
         val category = CategoryClassifier.classify(smsContent)
         val now = System.currentTimeMillis()
@@ -49,11 +61,13 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
             amount = parsed.amount,
             category = category,
             timeStamp = now,
+            localCreatedAt = now,
             synced = false,
-            type = parsed.type,
+            type = parsed.type.lowercase(),
             name = "SMS - ${parsed.bankName}"
         )
         val expenseId = db.expenseDao().insertExpenseAndGetId(expense)
+        Log.d("SmsReceiver", "Inserted expense id=$expenseId amount=${parsed.amount}")
 
         val smsTransaction = SmsTransactionEntity(
             expenseId = expenseId.toInt(),

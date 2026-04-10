@@ -1,5 +1,6 @@
 package com.arijit.budgettracker
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -48,6 +49,11 @@ class AccountSettingActivity : AppCompatActivity() {
 
         // 5. Sự kiện nút Lưu
         btnSave.setOnClickListener { updateUserData() }
+
+        // 6. Card Đổi mật khẩu
+        findViewById<View>(R.id.itemChangePassword).setOnClickListener {
+            startActivity(Intent(this, ChangePasswordActivity::class.java))
+        }
     }
 
     private fun initViews() {

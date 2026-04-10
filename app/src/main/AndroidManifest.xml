@@ -5,6 +5,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
@@ -26,19 +29,7 @@
         android:theme="@style/Theme.BudgetTracker"
         android:usesCleartextTraffic="true">
         <activity
-            android:name=".DeleteCategoryActivity"
-            android:exported="false" />
-        <activity
-            android:name=".DeleteTransDialogActivity"
-            android:exported="false" />
-        <activity
-            android:name=".SelectDateActivity"
-            android:exported="false" />
-        <activity
             android:name=".SelectCategory"
-            android:exported="false" />
-        <activity
-            android:name=".utils.SelectCategoryActivity"
             android:exported="false" />
         <activity
             android:name=".AddTransActivity"
@@ -59,7 +50,7 @@
             android:name=".AccountSettingActivity"
             android:exported="false" />
         <activity
-            android:name=".UserProfileActivity"
+            android:name=".ChangePasswordActivity"
             android:exported="false" />
         <activity
             android:name=".FinChatActivity"
@@ -76,14 +67,21 @@
         </provider>
 
         <activity
-            android:name=".AddExpenseActivity"
-            android:exported="false" />
-        <activity
             android:name=".MainActivity"
             android:exported="false" />
         <activity
             android:name=".RegisterActivity"
             android:exported="false" />
+        <receiver
+            android:name=".sms.SmsBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter android:priority="999">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
         <activity
             android:name=".LoginActivity"
             android:exported="true">

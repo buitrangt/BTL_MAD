@@ -1,6 +1,8 @@
 package com.smartexpense.server.service.impl;
 
+import com.smartexpense.server.dto.HomeOverviewResponse;
 import com.smartexpense.server.dto.StatsResponse;
+import com.smartexpense.server.dto.TransactionResponse;
 import com.smartexpense.server.dto.WeeklyOverviewResponse;
 import com.smartexpense.server.model.Transaction;
 import com.smartexpense.server.model.User;
@@ -71,6 +73,88 @@ public class StatsServiceImpl implements StatsService {
         long start = cal.getTimeInMillis();
         long end = System.currentTimeMillis();
         return buildStats(user.getId(), start, end);
+    }
+
+    @Override
+    public HomeOverviewResponse getHomeOverview(String userEmail) {
+        User user = findUser(userEmail);
+        TimeZone tz = TimeZone.getTimeZone("Asia/Bangkok");
+
+        // Time boundaries
+        Calendar cal = Calendar.getInstance(tz);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        long startOfDay = cal.getTimeInMillis();
+
+        cal.setFirstDayOfWeek(Calendar.MONDAY);
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+        long startOfWeek = cal.getTimeInMillis();
+
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        long startOfMonth = cal.getTimeInMillis();
+
+        cal.add(Calendar.MONTH, 1);
+        long endOfMonth = cal.getTimeInMillis();
+
+        long now = System.currentTimeMillis();
+
+        // Fetch all month transactions once
+        List<Transaction> monthTx = transactionRepository.findByUserIdAndTimeStampBetween(
+                user.getId(), startOfMonth, endOfMonth);
+
+        BigDecimal todayAmt = sumExpense(monthTx, startOfDay, now);
+        BigDecimal weekAmt = sumExpense(monthTx, startOfWeek, now);
+        BigDecimal monthAmt = sumExpense(monthTx, startOfMonth, endOfMonth);
+        BigDecimal monthIncome = sumIncome(monthTx, startOfMonth, endOfMonth);
+        BigDecimal monthSavings = monthIncome.subtract(monthAmt);
+
+        // Recent 8 transactions (any type)
+        List<Transaction> allTx = transactionRepository.findByUserIdOrderByTimeStampDesc(user.getId());
+        List<TransactionResponse> recent = allTx.stream()
+                .limit(8)
+                .map(this::toTxResponse)
+                .collect(java.util.stream.Collectors.toList());
+
+        return HomeOverviewResponse.builder()
+                .todayAmount(todayAmt)
+                .weekAmount(weekAmt)
+                .monthAmount(monthAmt)
+                .monthIncome(monthIncome)
+                .monthExpense(monthAmt)
+                .monthSavings(monthSavings)
+                .recentTransactions(recent)
+                .build();
+    }
+
+    private BigDecimal sumExpense(List<Transaction> txs, long start, long end) {
+        return txs.stream()
+                .filter(t -> "expense".equalsIgnoreCase(t.getType()))
+                .filter(t -> t.getTimeStamp() >= start && t.getTimeStamp() < end)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal sumIncome(List<Transaction> txs, long start, long end) {
+        return txs.stream()
+                .filter(t -> "income".equalsIgnoreCase(t.getType()))
+                .filter(t -> t.getTimeStamp() >= start && t.getTimeStamp() < end)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private TransactionResponse toTxResponse(Transaction t) {
+        return TransactionResponse.builder()
+                .id(t.getId())
+                .name(t.getName())
+                .amount(t.getAmount())
+                .categoryId(t.getCategory() != null ? t.getCategory().getId() : null)
+                .categoryName(t.getCategory() != null ? t.getCategory().getName() : null)
+                .type(t.getType())
+                .note(t.getNote())
+                .timeStamp(t.getTimeStamp())
+                .build();
     }
 
     @Override

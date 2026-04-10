@@ -123,8 +123,12 @@
                 app:cardElevation="0dp">
 
                 <RelativeLayout
+                    android:id="@+id/itemChangePassword"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:padding="16dp">
                     <ImageView
                         android:id="@+id/iconLock"

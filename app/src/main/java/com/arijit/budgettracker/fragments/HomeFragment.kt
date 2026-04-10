@@ -71,8 +71,10 @@ class HomeFragment : Fragment() {
         adapter.onEditClick = { expense ->
             val intent = Intent(requireContext(), AddTransActivity::class.java)
             intent.putExtra("expenseId", expense.id)
+            expense.remoteId?.let { intent.putExtra("remoteId", it) }
             intent.putExtra("type", expense.type)
             intent.putExtra("category", expense.category)
+            intent.putExtra("name", expense.name)
             intent.putExtra("amount", expense.amount)
             intent.putExtra("note", expense.note)
             intent.putExtra("timeStamp", expense.timeStamp)
@@ -97,16 +99,16 @@ class HomeFragment : Fragment() {
             thisMonthAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it)
         }
 
+        // Load data from API
+        viewModel.loadHomeOverview()
+
         return view
     }
 
     override fun onResume() {
         super.onResume()
-
-        // Force refresh amounts display
-        viewModel.todayAmount.value?.let { todayAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it) }
-        viewModel.weekAmount.value?.let { thisWeekAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it) }
-        viewModel.monthAmount.value?.let { thisMonthAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it) }
+        // Refresh from API when returning to Home tab
+        viewModel.loadHomeOverview()
     }
 
     private fun showDeleteConfirmDialog(expense: com.arijit.budgettracker.db.Expense) {
