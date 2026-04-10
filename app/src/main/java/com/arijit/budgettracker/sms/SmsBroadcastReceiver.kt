@@ -51,8 +51,7 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
             timeStamp = now,
             synced = false,
             type = parsed.type,
-            name = "SMS - ${parsed.bankName}",
-            source = "SMS"
+            name = "SMS - ${parsed.bankName}"
         )
         val expenseId = db.expenseDao().insertExpenseAndGetId(expense)
 

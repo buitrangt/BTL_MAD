@@ -7,10 +7,12 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [Expense::class, Category::class], version = 8, exportSchema = false)
+@Database(entities = [Expense::class, Category::class, SmsTemplate::class, SmsTransactionEntity::class], version = 9, exportSchema = false)
 abstract class ExpenseDatabase : RoomDatabase() {
     abstract fun expenseDao(): ExpenseDao
     abstract fun categoryDao(): CategoryDao
+    abstract fun smsTemplateDao(): SmsTemplateDao
+    abstract fun smsTransactionDao(): SmsTransactionDao
 
     companion object {
         @Volatile
@@ -77,6 +79,36 @@ abstract class ExpenseDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS sms_templates (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        senderPattern TEXT NOT NULL,
+                        amountRegex TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        bankName TEXT NOT NULL,
+                        isActive INTEGER NOT NULL DEFAULT 1,
+                        version INTEGER NOT NULL DEFAULT 1
+                    )
+                """)
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS sms_transactions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        expenseId INTEGER NOT NULL,
+                        sender TEXT NOT NULL,
+                        rawContent TEXT NOT NULL,
+                        parsedAmount REAL NOT NULL,
+                        parsedCategory TEXT NOT NULL,
+                        type TEXT NOT NULL DEFAULT 'EXPENSE',
+                        status TEXT NOT NULL DEFAULT 'CONFIRMED',
+                        transactionTime INTEGER NOT NULL,
+                        synced INTEGER NOT NULL DEFAULT 0
+                    )
+                """)
+            }
+        }
+
         fun getDatabase(context: Context): ExpenseDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -91,7 +123,8 @@ abstract class ExpenseDatabase : RoomDatabase() {
                     MIGRATION_4_5,
                     MIGRATION_5_6,
                     MIGRATION_6_7,
-                    MIGRATION_7_8
+                    MIGRATION_7_8,
+                    MIGRATION_8_9
                 )
                 // Dev-safety: if a user runs an APK with a mismatched schema, reset local DB
                 // instead of failing silently and leaving the UI stale.

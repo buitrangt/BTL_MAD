@@ -93,7 +93,7 @@ public class SmsServiceImpl implements SmsService {
     private Category resolveCategory(String categoryName, Long userId) {
         if (categoryName == null || categoryName.isEmpty()) return null;
         return categoryRepository.findByNameAndUserId(categoryName, userId)
-                .or(() -> categoryRepository.findByNameAndUserIsNull(categoryName))
+                .or(() -> categoryRepository.findDefaultByName(categoryName))
                 .orElse(null);
     }
 }

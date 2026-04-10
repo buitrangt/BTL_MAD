@@ -32,9 +32,21 @@ data class TransactionResponse(
     val timeStamp: Long
 )
 data class StatsResponse(val totalAmount: Double, val categoryBreakdown: Map<String, Double>?)
+data class WeeklyOverviewResponse(
+    val totalAmount: Double,
+    val percentChange: Double,
+    val dailyBreakdown: Map<String, Double>,
+    val categoryBreakdown: List<CategoryStat>
+)
+data class CategoryStat(
+    val category: String,
+    val amount: Double,
+    val percent: Double
+)
 data class ResetPasswordRequest(val email: String, val newPassword: String)
 data class CategoryRequest(val name: String, val note: String?)
 data class CategoryResponse(val id: Long, val name: String, val note: String?, val isDefault: Boolean)
+data class SmsTemplateDto(val id: Long, val senderPattern: String, val amountRegex: String, val type: String, val bankName: String, val version: Int)
 
 interface ApiService {
     // Auth
@@ -81,6 +93,9 @@ interface ApiService {
     suspend fun deleteCategory(@Path("id") id: Long): Response<Void>
 
     // Stats
+    @GET("api/stats/weekly-overview")
+    suspend fun getWeeklyOverview(): Response<WeeklyOverviewResponse>
+
     @GET("api/stats/daily")
     suspend fun getDailyStats(): Response<StatsResponse>
 
@@ -109,6 +124,10 @@ interface ApiService {
 
     @POST("api/auth/reset-password")
     suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<ResponseBody>
+
+    // SMS Templates
+    @GET("api/sms/templates")
+    suspend fun getSmsTemplates(): Response<List<SmsTemplateDto>>
 
     @POST("api/finchat/ask")
     suspend fun askFinChat(

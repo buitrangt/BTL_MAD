@@ -2,6 +2,7 @@ package com.arijit.budgettracker.utils
 
 import android.content.Context
 import com.arijit.budgettracker.api.RetrofitClient
+import com.arijit.budgettracker.api.SmsTemplateDto
 import com.arijit.budgettracker.db.ExpenseDatabase
 import com.arijit.budgettracker.db.SmsTemplate
 import kotlinx.coroutines.Dispatchers
