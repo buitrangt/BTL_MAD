@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:scrollbars="none"
+    tools:context=".fragments.StatsFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Header với tiêu đề và icon lịch -->
+        <RelativeLayout
+            android:id="@+id/header_layout"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@color/background"
+            android:paddingHorizontal="16dp">
+
+            <TextView
+                android:id="@+id/header_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:fontFamily="@font/montserrat_bold"
+                android:text="Thống kê"
+                android:textColor="@color/light_green"
+                android:textSize="24sp" />
+
+            <ImageButton
+                android:id="@+id/calendar_btn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/select_date"
+                android:scaleType="centerInside"
+                android:src="@android:drawable/ic_menu_today"
+                app:tint="@color/light_green" />
+
+        </RelativeLayout>
+
+        <!-- Total spending display -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="24dp"
+            android:paddingVertical="20dp">
+
+            <TextView
+                android:id="@+id/total_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_regular"
+                android:text="Tổng chi tiêu"
+                android:textColor="@color/gray"
+                android:textSize="13sp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+
+                <TextView
+                    android:id="@+id/total_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:fontFamily="@font/montserrat_bold"
+                    android:text="€428.50"
+                    android:textColor="@color/dark_green"
+                    android:textSize="36sp" />
+
+                <TextView
+                    android:id="@+id/total_change_percent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:fontFamily="@font/montserrat_regular"
+                    android:text="↑ 12%"
+                    android:textColor="@color/red"
+                    android:textSize="14sp" />
+
+            </RelativeLayout>
+
+        </LinearLayout>
+
+        <!-- Bar Chart for Weekly Spending -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="16dp">
+
+            <TextView
+                android:id="@+id/last_seven_days_txt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_bold"
+                android:text="Thống kê chi tiêu theo tuần"
+                android:textColor="@color/dark_green"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/daily_expense_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/light_green"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <com.github.mikephil.charting.charts.BarChart
+                    android:id="@+id/daily_expense"
+                    android:layout_width="match_parent"
+                    android:layout_height="240dp" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Distribution Chart (Pie/Donut) for Monthly Spending -->
+        <TextView
+            android:id="@+id/distribution_title_txt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="24dp"
+            android:fontFamily="@font/montserrat_bold"
+            android:text="Phân bố chi tiêu"
+            android:textColor="@color/dark_green"
+            android:textSize="16sp" />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/distribution_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <com.github.mikephil.charting.charts.PieChart
+                    android:id="@+id/pie_chart"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
+                    android:layout_alignParentStart="true" />
+
+                <LinearLayout
+                    android:id="@+id/legend_container"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_toEndOf="@id/pie_chart"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="0dp"
+                    android:orientation="vertical"
+                    android:gravity="center_vertical">
+
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/legend_items"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+
+                    </ScrollView>
+
+                </LinearLayout>
+
+            </RelativeLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        <!-- Top Spent Categories -->
+        <TextView
+            android:id="@+id/top_categories_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="24dp"
+            android:fontFamily="@font/montserrat_bold"
+            android:text="Danh mục chi nhiều nhất"
+            android:textColor="@color/dark_green"
+            android:textSize="16sp" />
+
+        <LinearLayout
+            android:id="@+id/see_all_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:paddingHorizontal="24dp"
+            android:paddingTop="8dp">
+
+            <TextView
+                android:id="@+id/see_all_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_regular"
+                android:text="Xem tất cả"
+                android:textColor="@color/primary_green"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/top_categories_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="20dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:id="@+id/categories_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/no_data_categories"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:paddingVertical="32dp"
+                    android:text="Không có dữ liệu"
+                    android:textColor="@color/gray"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+
+</ScrollView>
