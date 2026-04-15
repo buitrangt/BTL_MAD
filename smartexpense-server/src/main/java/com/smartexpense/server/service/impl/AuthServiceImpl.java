@@ -38,7 +38,7 @@ public class AuthServiceImpl implements AuthService {
         userRepository.save(user);
 
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getEmail(), user.getName(), user.getPhone());
+        return new AuthResponse(token, user.getEmail(), user.getName(), user.getRole());
     }
 
     @Override
@@ -50,8 +50,12 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Invalid email or password");
         }
 
+        if (Boolean.TRUE.equals(user.getLocked())) {
+            throw new RuntimeException("Tài khoản đã bị khóa");
+        }
+
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getEmail(), user.getName(), user.getPhone());
+        return new AuthResponse(token, user.getEmail(), user.getName(), user.getRole());
     }
 @Override
     public void sendOtp(String email) {

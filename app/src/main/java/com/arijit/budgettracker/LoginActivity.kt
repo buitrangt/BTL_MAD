@@ -20,9 +20,14 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Kiểm tra đăng nhập (giữ nguyên)
+        // Kiểm tra đăng nhập - redirect theo role
         if (TokenManager.isLoggedIn(this)) {
-            startActivity(Intent(this, MainActivity::class.java))
+            val target = if (TokenManager.isAdmin(this)) {
+                AdminOverviewActivity::class.java
+            } else {
+                MainActivity::class.java
+            }
+            startActivity(Intent(this, target))
             finish()
             return
         }
@@ -75,8 +80,15 @@ class LoginActivity : AppCompatActivity() {
                             authResponse.name ?: "",
                             authResponse.phone ?: ""
                         )
+                        TokenManager.saveRole(this@LoginActivity, authResponse.role)
 
-                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                        // Redirect theo role
+                        val target = if ("ADMIN".equals(authResponse.role, ignoreCase = true)) {
+                            AdminOverviewActivity::class.java
+                        } else {
+                            MainActivity::class.java
+                        }
+                        startActivity(Intent(this@LoginActivity, target))
                         finish()
                     } else {
                         tvError.text = "Invalid email or password"

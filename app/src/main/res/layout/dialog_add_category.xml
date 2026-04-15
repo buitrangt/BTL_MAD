@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/montserrat_regular"
+        android:text="Tên danh mục"
+        android:textColor="#666666"
+        android:textSize="11sp" />
+
+    <EditText
+        android:id="@+id/etName"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/bg_admin_stat_card"
+        android:fontFamily="@font/montserrat_regular"
+        android:hint="Ví dụ: Ăn uống"
+        android:paddingHorizontal="12dp"
+        android:singleLine="true"
+        android:textColor="#1A1A1A"
+        android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:fontFamily="@font/montserrat_regular"
+        android:text="Ghi chú (tùy chọn)"
+        android:textColor="#666666"
+        android:textSize="11sp" />
+
+    <EditText
+        android:id="@+id/etNote"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/bg_admin_stat_card"
+        android:fontFamily="@font/montserrat_regular"
+        android:hint="Ví dụ: food"
+        android:paddingHorizontal="12dp"
+        android:singleLine="true"
+        android:textColor="#1A1A1A"
+        android:textSize="14sp" />
+</LinearLayout>
