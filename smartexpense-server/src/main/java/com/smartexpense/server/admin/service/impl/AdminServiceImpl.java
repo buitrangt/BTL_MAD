@@ -1,18 +1,26 @@
 package com.smartexpense.server.admin.service.impl;
 
+import com.smartexpense.server.admin.dto.AdminCategoryCreateRequest;
+import com.smartexpense.server.admin.dto.AdminCategoryDto;
 import com.smartexpense.server.admin.dto.AdminOverviewResponse;
 import com.smartexpense.server.admin.dto.AdminUserDto;
+import com.smartexpense.server.admin.dto.AdminUsersPageResponse;
 import com.smartexpense.server.admin.service.AdminService;
+import com.smartexpense.server.exception.ResourceNotFoundException;
+import com.smartexpense.server.model.Category;
 import com.smartexpense.server.model.User;
+import com.smartexpense.server.repository.CategoryRepository;
 import com.smartexpense.server.repository.TransactionRepository;
 import com.smartexpense.server.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,13 +35,12 @@ public class AdminServiceImpl implements AdminService {
 
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
+    private final CategoryRepository categoryRepository;
 
     @Override
     public AdminOverviewResponse getOverview() {
-        // ===== Total users =====
         long totalUsers = userRepository.count();
 
-        // ===== Created this month / last month =====
         LocalDate today = LocalDate.now(ZONE);
         LocalDate firstOfMonth = today.withDayOfMonth(1);
         LocalDate firstOfLastMonth = firstOfMonth.minusMonths(1);
@@ -49,7 +56,6 @@ public class AdminServiceImpl implements AdminService {
 
         double totalChange = computePercent(createdThisMonth, createdLastMonth);
 
-        // ===== New users today / yesterday =====
         long newToday = userRepository.countByCreatedAtBetween(
                 today.atStartOfDay(),
                 today.plusDays(1).atStartOfDay()
@@ -60,8 +66,6 @@ public class AdminServiceImpl implements AdminService {
         );
         double newChange = computePercent(newToday, newYesterday);
 
-        // ===== Active users today =====
-        // Definition: distinct users who have at least 1 transaction created today
         long startOfDayMs = today.atStartOfDay(ZONE).toInstant().toEpochMilli();
         long endOfDayMs = today.plusDays(1).atStartOfDay(ZONE).toInstant().toEpochMilli();
         long startYesterdayMs = today.minusDays(1).atStartOfDay(ZONE).toInstant().toEpochMilli();
@@ -86,7 +90,6 @@ public class AdminServiceImpl implements AdminService {
 
         double activeChange = computePercent(activeToday, activeYesterday);
 
-        // ===== Weekly registrations (Mon..Sun of current week) =====
         LocalDate monday = today.with(DayOfWeek.MONDAY);
         LocalDate sundayNext = monday.plusDays(7);
 
@@ -119,10 +122,9 @@ public class AdminServiceImpl implements AdminService {
             weekly.merge(key, 1L, Long::sum);
         }
 
-        // ===== Recent users (top 5) =====
         List<AdminUserDto> recent = userRepository.findRecent().stream()
                 .limit(5)
-                .map(this::toDto)
+                .map(this::toUserDto)
                 .collect(Collectors.toList());
 
         return AdminOverviewResponse.builder()
@@ -137,7 +139,77 @@ public class AdminServiceImpl implements AdminService {
                 .build();
     }
 
-    private AdminUserDto toDto(User u) {
+    @Override
+    public AdminUsersPageResponse listUsers(String search, int page, int size) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(Math.max(1, size), 100);
+        PageRequest pageable = PageRequest.of(safePage, safeSize,
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<User> result = userRepository.searchUsers(
+                search == null ? "" : search.trim(), pageable);
+
+        List<AdminUserDto> items = result.getContent().stream()
+                .map(this::toUserDto)
+                .collect(Collectors.toList());
+
+        return AdminUsersPageResponse.builder()
+                .items(items)
+                .page(result.getNumber())
+                .size(result.getSize())
+                .totalItems(result.getTotalElements())
+                .totalPages(result.getTotalPages())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public AdminUserDto setUserLocked(Long userId, boolean locked) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setLocked(locked);
+        userRepository.save(user);
+        return toUserDto(user);
+    }
+
+    @Override
+    public List<AdminCategoryDto> listDefaultCategories() {
+        return categoryRepository.findAllDefault().stream()
+                .map(this::toCategoryDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public AdminCategoryDto createDefaultCategory(AdminCategoryCreateRequest req) {
+        String name = req.getName() == null ? "" : req.getName().trim();
+        if (name.isEmpty()) {
+            throw new RuntimeException("Tên danh mục không được để trống");
+        }
+        if (categoryRepository.existsDefaultByName(name)) {
+            throw new RuntimeException("Danh mục mặc định đã tồn tại");
+        }
+        Category c = Category.builder()
+                .name(name)
+                .note(req.getNote())
+                .isDefault(true)
+                .user(null)
+                .build();
+        c = categoryRepository.save(c);
+        return toCategoryDto(c);
+    }
+
+    @Override
+    @Transactional
+    public void deleteDefaultCategory(Long id) {
+        Category c = categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+        if (c.getUser() != null) {
+            throw new RuntimeException("Không thể xóa danh mục của người dùng");
+        }
+        categoryRepository.delete(c);
+    }
+
+    private AdminUserDto toUserDto(User u) {
         return AdminUserDto.builder()
                 .id(u.getId())
                 .name(u.getName())
@@ -146,6 +218,16 @@ public class AdminServiceImpl implements AdminService {
                 .role(u.getRole())
                 .locked(u.getLocked())
                 .createdAt(u.getCreatedAt())
+                .build();
+    }
+
+    private AdminCategoryDto toCategoryDto(Category c) {
+        return AdminCategoryDto.builder()
+                .id(c.getId())
+                .name(c.getName())
+                .note(c.getNote())
+                .isDefault(c.getIsDefault())
+                .createdAt(c.getCreatedAt())
                 .build();
     }
 

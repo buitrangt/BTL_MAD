@@ -38,7 +38,7 @@ class ExpenseAdapter(
 
             val formattedAmount = CurrencyPrefs.format(expense.amount)
 
-            if (expense.type == "INCOME") {
+            if (expense.type.equals("income", ignoreCase = true)) {
                 textViewAmount.text = "+$formattedAmount"
                 textViewAmount.setTextColor(androidx.core.content.ContextCompat.getColor(itemView.context, android.R.color.holo_green_dark))
             } else {

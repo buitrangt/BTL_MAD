@@ -36,8 +36,15 @@ class HomeRecentAdapter(
         private val textViewSubtitle: TextView = itemView.findViewById(R.id.textViewSubtitle)
 
         fun bind(expense: Expense) {
-            val sign = if (expense.type == "income") "+" else "-"
+            val isIncome = expense.type.equals("income", ignoreCase = true)
+            val sign = if (isIncome) "+" else "-"
             tvAmount.text = "$sign${CurrencyPrefs.format(expense.amount)}"
+            tvAmount.setTextColor(
+                androidx.core.content.ContextCompat.getColor(
+                    itemView.context,
+                    if (isIncome) android.R.color.holo_green_dark else android.R.color.holo_red_dark
+                )
+            )
             textViewCategory.text = expense.category
             textViewSubtitle.text = expense.note.takeIf { it.isNotBlank() } ?: "Ghi chú"
             tvDate.text = formatDate(expense.timeStamp)

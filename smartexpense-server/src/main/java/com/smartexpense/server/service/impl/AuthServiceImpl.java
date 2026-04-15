@@ -50,6 +50,10 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Invalid email or password");
         }
 
+        if (Boolean.TRUE.equals(user.getLocked())) {
+            throw new RuntimeException("Tài khoản đã bị khóa");
+        }
+
         String token = jwtUtil.generateToken(user.getEmail());
         return new AuthResponse(token, user.getEmail(), user.getName(), user.getRole());
     }

@@ -14,18 +14,25 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.ViewModelProvider
 import com.arijit.budgettracker.api.AdminOverviewResponse
 import com.arijit.budgettracker.api.AdminUserDto
 import com.arijit.budgettracker.models.AdminViewModel
 import com.arijit.budgettracker.utils.TokenManager
+import com.google.android.material.navigation.NavigationView
 
 class AdminOverviewActivity : AppCompatActivity() {
 
     private lateinit var vm: AdminViewModel
 
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navView: NavigationView
+    private lateinit var toolbar: Toolbar
     private lateinit var tvWelcome: TextView
     private lateinit var tvTotalUsers: TextView
     private lateinit var tvTotalChange: TextView
@@ -43,10 +50,23 @@ class AdminOverviewActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_admin_overview)
+
+        drawerLayout = findViewById(R.id.drawerLayout)
+        navView = findViewById(R.id.navView)
+        toolbar = findViewById(R.id.toolbar)
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val sb = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(sb.left, sb.top, sb.right, sb.bottom)
             insets
+        }
+
+        toolbar.setNavigationOnClickListener {
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+                drawerLayout.closeDrawer(GravityCompat.START)
+            } else {
+                drawerLayout.openDrawer(GravityCompat.START)
+            }
         }
 
         tvWelcome = findViewById(R.id.tvWelcome)
@@ -62,18 +82,13 @@ class AdminOverviewActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
         btnLogout = findViewById(R.id.btnLogout)
 
-        // Welcome with admin name
         val name = TokenManager.getName(this) ?: "Admin"
         tvWelcome.text = "Chào mừng trở lại, $name"
 
-        btnLogout.setOnClickListener {
-            TokenManager.logout(this)
-            startActivity(
-                Intent(this, LoginActivity::class.java)
-                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
-            )
-            finish()
-        }
+        setupDrawerHeader(name)
+        setupDrawerNavigation()
+
+        btnLogout.setOnClickListener { doLogout() }
 
         vm = ViewModelProvider(this)[AdminViewModel::class.java]
         vm.overview.observe(this) { data -> if (data != null) render(data) }
@@ -87,28 +102,73 @@ class AdminOverviewActivity : AppCompatActivity() {
         vm.load()
     }
 
+    private fun setupDrawerHeader(name: String) {
+        val header = navView.getHeaderView(0)
+        header.findViewById<TextView>(R.id.navName).text = name
+        header.findViewById<TextView>(R.id.navEmail).text =
+            TokenManager.getEmail(this) ?: ""
+        header.findViewById<TextView>(R.id.navAvatar).text =
+            name.firstOrNull()?.uppercaseChar()?.toString() ?: "A"
+    }
+
+    private fun setupDrawerNavigation() {
+        navView.setCheckedItem(R.id.nav_overview)
+        navView.setNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_overview -> {
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                }
+                R.id.nav_users -> {
+                    startActivity(Intent(this, AdminUsersActivity::class.java))
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                }
+                R.id.nav_categories -> {
+                    startActivity(Intent(this, AdminCategoriesActivity::class.java))
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                }
+                R.id.nav_logout -> {
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                    doLogout()
+                }
+            }
+            true
+        }
+    }
+
+    override fun onBackPressed() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    private fun doLogout() {
+        TokenManager.logout(this)
+        startActivity(
+            Intent(this, LoginActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+        finish()
+    }
+
     override fun onResume() {
         super.onResume()
+        navView.setCheckedItem(R.id.nav_overview)
         if (::vm.isInitialized) vm.load()
     }
 
     private fun render(d: AdminOverviewResponse) {
-        // Total
         tvTotalUsers.text = formatCount(d.totalUsers)
         tvTotalChange.text = formatChange(d.percentChangeVsLastMonth)
 
-        // New today
         tvNewUsers.text = formatCount(d.newUsersToday)
         applyChange(tvNewUsersChange, d.newUsersChangePercent)
 
-        // Active today
         tvActiveUsers.text = formatCount(d.activeUsersToday)
         applyChange(tvActiveUsersChange, d.activeUsersChangePercent)
 
-        // Bar chart
         renderBarChart(d.weeklyRegistrations)
-
-        // Recent users
         renderRecentUsers(d.recentUsers)
     }
 
@@ -148,7 +208,6 @@ class AdminOverviewActivity : AppCompatActivity() {
             val ratio = value.toDouble() / maxValue.toDouble()
             val heightDp = (ratio * 80).toInt().coerceAtLeast(4)
 
-            // Bar column container
             val column = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
@@ -162,7 +221,6 @@ class AdminOverviewActivity : AppCompatActivity() {
             column.addView(bar)
             barChartContainer.addView(column)
 
-            // Label
             val label = TextView(this).apply {
                 text = labels[idx]
                 gravity = Gravity.CENTER
@@ -196,13 +254,11 @@ class AdminOverviewActivity : AppCompatActivity() {
             val displayName = u.name?.takeIf { it.isNotBlank() } ?: u.email
             item.findViewById<TextView>(R.id.tvName).text = displayName
             item.findViewById<TextView>(R.id.tvEmail).text = u.email
-            // Avatar = first letter of name
             item.findViewById<TextView>(R.id.tvAvatar).text =
                 displayName.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
 
             userListContainer.addView(item)
 
-            // Divider
             if (index < list.size - 1) {
                 val divider = View(this).apply {
                     layoutParams = LinearLayout.LayoutParams(

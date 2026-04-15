@@ -123,6 +123,22 @@ data class AdminOverviewResponse(
     val weeklyRegistrations: Map<String, Long>,
     val recentUsers: List<AdminUserDto>
 )
+data class AdminUsersPageResponse(
+    val items: List<AdminUserDto>,
+    val page: Int,
+    val size: Int,
+    val totalItems: Long,
+    val totalPages: Int
+)
+data class AdminLockRequest(val locked: Boolean)
+data class AdminCategoryDto(
+    val id: Long,
+    val name: String,
+    val note: String?,
+    val isDefault: Boolean?,
+    val createdAt: String?
+)
+data class AdminCategoryCreateRequest(val name: String, val note: String?)
 
 interface ApiService {
     // Auth
@@ -214,6 +230,30 @@ interface ApiService {
     // ===== ADMIN =====
     @GET("api/admin/overview")
     suspend fun getAdminOverview(): Response<AdminOverviewResponse>
+
+    @GET("api/admin/users")
+    suspend fun getAdminUsers(
+        @Query("search") search: String = "",
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<AdminUsersPageResponse>
+
+    @PATCH("api/admin/users/{id}/lock")
+    suspend fun setAdminUserLock(
+        @Path("id") id: Long,
+        @Body body: AdminLockRequest
+    ): Response<AdminUserDto>
+
+    @GET("api/admin/categories")
+    suspend fun getAdminCategories(): Response<List<AdminCategoryDto>>
+
+    @POST("api/admin/categories")
+    suspend fun createAdminCategory(
+        @Body body: AdminCategoryCreateRequest
+    ): Response<AdminCategoryDto>
+
+    @DELETE("api/admin/categories/{id}")
+    suspend fun deleteAdminCategory(@Path("id") id: Long): Response<Void>
 
     // ===== INSIGHTS =====
     @GET("api/insights/summary")
