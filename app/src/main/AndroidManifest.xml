@@ -58,6 +58,9 @@
         <activity
             android:name=".InsightsActivity"
             android:exported="false" />
+        <activity
+            android:name=".AdminOverviewActivity"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

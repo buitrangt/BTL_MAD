@@ -102,6 +102,27 @@ data class ChatMessageDto(
     val createdAt: String?
 )
 
+// ======== ADMIN DTOs ========
+data class AdminUserDto(
+    val id: Long,
+    val name: String?,
+    val email: String,
+    val phone: String?,
+    val role: String?,
+    val locked: Boolean?,
+    val createdAt: String?
+)
+data class AdminOverviewResponse(
+    val totalUsers: Long,
+    val percentChangeVsLastMonth: Double,
+    val newUsersToday: Long,
+    val newUsersChangePercent: Double,
+    val activeUsersToday: Long,
+    val activeUsersChangePercent: Double,
+    val weeklyRegistrations: Map<String, Long>,
+    val recentUsers: List<AdminUserDto>
+)
+
 interface ApiService {
     // Auth
     @POST("api/auth/register")
@@ -188,6 +209,10 @@ interface ApiService {
     // SMS Templates
     @GET("api/sms/templates")
     suspend fun getSmsTemplates(): Response<List<SmsTemplateDto>>
+
+    // ===== ADMIN =====
+    @GET("api/admin/overview")
+    suspend fun getAdminOverview(): Response<AdminOverviewResponse>
 
     // ===== INSIGHTS =====
     @GET("api/insights/summary")

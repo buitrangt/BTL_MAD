@@ -8,6 +8,7 @@ object TokenManager {
     private const val KEY_EMAIL = "user_email"
     private const val KEY_NAME = "user_name"
     private const val KEY_PHONE = "user_phone"
+    private const val KEY_ROLE = "user_role"
 
     fun saveToken(context: Context, token: String) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -26,6 +27,22 @@ object TokenManager {
             .putString(KEY_NAME, name)
             .putString(KEY_PHONE, phone) // Lưu phone vào máy
             .apply()
+    }
+
+    fun saveRole(context: Context, role: String?) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_ROLE, role)
+            .apply()
+    }
+
+    fun getRole(context: Context): String? {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_ROLE, null)
+    }
+
+    fun isAdmin(context: Context): Boolean {
+        return "ADMIN".equals(getRole(context), ignoreCase = true)
     }
 
     fun getName(context: Context): String? {
