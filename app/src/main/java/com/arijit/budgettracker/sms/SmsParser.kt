@@ -1,5 +1,6 @@
 package com.arijit.budgettracker.sms
 
+import android.util.Log
 import com.arijit.budgettracker.db.SmsTemplate
 
 data class ParsedSms(
@@ -10,48 +11,91 @@ data class ParsedSms(
 
 object SmsParser {
 
-    private val BANK_KEYWORDS = listOf("GD", "giao dich", "so du", "tai khoan", "TK", "SD")
-    private val GENERIC_AMOUNT_REGEX = Regex("""(\d{1,3}(?:[.,]\d{3})+)""")
+    private const val TAG = "SmsParser"
+
+    private val BANK_KEYWORDS = listOf(
+        "GD", "giao dich", "giao dịch", "so du", "số dư",
+        "tai khoan", "tài khoản", "TK", "SD",
+        "VND", "vnd", "VNĐ", "đ"
+    )
+
+    private val CREDIT_KEYWORDS = listOf(
+        "nhan", "nhận", "da nhan", "đã nhận", "nhan duoc", "nhận được",
+        "cong", "cộng", "ghi co", "ghi có",
+        "chuyen den", "chuyển đến", "chuyen toi", "chuyển tới",
+        "nap tien", "nạp tiền", "hoan tien", "hoàn tiền",
+        "tien vao", "tiền vào", "thu nhap", "thu nhập",
+        "luong", "lương",
+        "+"
+    )
+    private val DEBIT_KEYWORDS = listOf(
+        "thanh toan", "thanh toán", "chi tieu", "chi tiêu",
+        "rut tien", "rút tiền", "ghi no", "ghi nợ",
+        "tien ra", "tiền ra",
+        "chuyen di", "chuyển đi", "chuyen khoan di", "chuyển khoản đi",
+        "mua ", "tra goi", "trả gói",
+        "-"
+    )
+
+    private val AMOUNT_REGEX = Regex("""(\d{1,3}(?:[.,]\d{3})+|\d{4,})""")
 
     fun parse(smsContent: String, sender: String, templates: List<SmsTemplate>): ParsedSms? {
-        val matchedTemplates = templates.filter { template ->
-            sender.contains(template.senderPattern, ignoreCase = true) ||
-            smsContent.contains(template.senderPattern, ignoreCase = true)
+        val bankName = identifyBank(smsContent, sender, templates) ?: sender
+
+        if (!hasBankKeyword(smsContent)) {
+            Log.d(TAG, "No bank keyword in: $smsContent")
+            return null
         }
 
-        for (template in matchedTemplates) {
-            val regex = Regex(template.amountRegex)
-            val match = regex.find(smsContent) ?: continue
-            val rawAmount = match.groupValues[1]
-            val amount = cleanAmount(rawAmount) ?: continue
-            if (amount <= 0) continue
-
-            val type = if (template.type == "CREDIT") "INCOME" else "EXPENSE"
-            return ParsedSms(amount, type, template.bankName)
+        val amount = extractAmount(smsContent) ?: run {
+            Log.d(TAG, "No amount in: $smsContent")
+            return null
         }
-
-        return tryGenericParse(smsContent, sender)
-    }
-
-    private fun tryGenericParse(smsContent: String, sender: String): ParsedSms? {
-        val hasBankKeyword = BANK_KEYWORDS.any { keyword ->
-            smsContent.contains(keyword, ignoreCase = true)
-        }
-        if (!hasBankKeyword) return null
-
-        val match = GENERIC_AMOUNT_REGEX.find(smsContent) ?: return null
-        val amount = cleanAmount(match.groupValues[1]) ?: return null
         if (amount < 1000) return null
 
-        return ParsedSms(amount, "EXPENSE", sender)
+        val type = detectType(smsContent)
+        Log.d(TAG, "Parsed amount=$amount type=$type bank=$bankName from: $smsContent")
+        return ParsedSms(amount, type, bankName)
     }
 
-    private fun cleanAmount(raw: String): Double? {
+    private fun identifyBank(
+        smsContent: String,
+        sender: String,
+        templates: List<SmsTemplate>
+    ): String? {
+        val match = templates.firstOrNull { template ->
+            sender.contains(template.senderPattern, ignoreCase = true) ||
+                smsContent.contains(template.senderPattern, ignoreCase = true)
+        }
+        return match?.bankName
+    }
+
+    private fun hasBankKeyword(smsContent: String): Boolean {
+        return BANK_KEYWORDS.any { smsContent.contains(it, ignoreCase = true) }
+    }
+
+    private fun extractAmount(smsContent: String): Double? {
+        val cleaned = AMOUNT_REGEX.find(smsContent)?.groupValues?.get(1) ?: return null
         return try {
-            val cleaned = raw.replace(".", "").replace(",", "")
-            cleaned.toDouble()
+            cleaned.replace(".", "").replace(",", "").toDouble()
         } catch (e: NumberFormatException) {
             null
+        }
+    }
+
+    private fun detectType(smsContent: String): String {
+        val lower = smsContent.lowercase()
+        val creditIdx = CREDIT_KEYWORDS
+            .mapNotNull { kw -> lower.indexOf(kw.lowercase()).takeIf { it >= 0 } }
+            .minOrNull()
+        val debitIdx = DEBIT_KEYWORDS
+            .mapNotNull { kw -> lower.indexOf(kw.lowercase()).takeIf { it >= 0 } }
+            .minOrNull()
+
+        return when {
+            creditIdx != null && (debitIdx == null || creditIdx < debitIdx) -> "INCOME"
+            debitIdx != null -> "EXPENSE"
+            else -> "EXPENSE"
         }
     }
 }
