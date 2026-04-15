@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import com.arijit.budgettracker.api.ExpenseRequest
 import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.db.Expense
+import com.arijit.budgettracker.utils.AppRefreshBus
 import com.arijit.budgettracker.utils.Vibration
 import com.google.android.material.datepicker.MaterialDatePicker
 import kotlinx.coroutines.Dispatchers
@@ -296,6 +297,7 @@ class AddTransActivity : AppCompatActivity() {
                         if (isEditMode) "Cập nhật thành công" else "Đã thêm giao dịch",
                         Toast.LENGTH_SHORT
                     ).show()
+                    AppRefreshBus.notifyChanged()
                     finish()
                 } else {
                     Toast.makeText(

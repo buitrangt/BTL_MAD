@@ -19,10 +19,12 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.arijit.budgettracker.api.CategoryResponse
 import com.arijit.budgettracker.api.RetrofitClient
+import com.arijit.budgettracker.utils.AppRefreshBus
 import com.arijit.budgettracker.utils.Vibration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.Normalizer
 
 class SelectCategory : AppCompatActivity() {
     companion object {
@@ -38,6 +40,7 @@ class SelectCategory : AppCompatActivity() {
     private var allCategories: List<CategoryResponse> = emptyList()
     private var currentCategory: String = ""
     private var editingCategoryOldName: String = ""
+    private var renderSeq: Long = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,15 +100,25 @@ class SelectCategory : AppCompatActivity() {
     }
 
     private fun filterCategories(query: String) {
-        val filtered = if (query.isEmpty()) {
+        val queryNorm = normalizeForSearch(query)
+        val filtered = if (queryNorm.isEmpty()) {
             allCategories
         } else {
             allCategories.filter {
-                it.name.lowercase().contains(query.lowercase()) ||
-                        (it.note ?: "").lowercase().contains(query.lowercase())
+                normalizeForSearch(it.name).contains(queryNorm) ||
+                    normalizeForSearch(it.note).contains(queryNorm)
             }
         }
         displayCategories(filtered)
+    }
+
+    private fun normalizeForSearch(input: String?): String {
+        if (input.isNullOrBlank()) return ""
+        val lower = input.trim().lowercase()
+        val noMarks = Normalizer.normalize(lower, Normalizer.Form.NFD)
+            .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+        // Vietnamese specific: đ/Đ is not a combining mark
+        return noMarks.replace('đ', 'd')
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -138,12 +151,19 @@ class SelectCategory : AppCompatActivity() {
     }
 
     private fun displayCategories(categories: List<CategoryResponse>) {
+        // Prevent duplicated renders when multiple categoryGrid.post() are queued.
+        renderSeq += 1
+        val seq = renderSeq
+
         categoryGrid.removeAllViews()
+        categoryGrid.removeCallbacks(null)
 
         val tvCategoryCount = findViewById<TextView>(R.id.tvCategoryCount)
         tvCategoryCount.text = "tổng ${categories.size}"
 
         categoryGrid.post {
+            if (seq != renderSeq) return@post
+            categoryGrid.removeAllViews()
             val gridWidth = categoryGrid.width
             val totalHorizontalPadding = categoryGrid.paddingLeft + categoryGrid.paddingRight
             val cardWidth = (gridWidth - totalHorizontalPadding) / 2 - 16
@@ -257,6 +277,7 @@ class SelectCategory : AppCompatActivity() {
                 }
                 if (response.isSuccessful) {
                     Toast.makeText(this@SelectCategory, "Đã xóa danh mục", Toast.LENGTH_SHORT).show()
+                    AppRefreshBus.notifyChanged()
                     loadCategories()
                 } else {
                     // Backend may reject if category in use
