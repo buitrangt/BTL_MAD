@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F2F4F8"
-    android:orientation="vertical"
+    android:fillViewport="true"
     android:padding="16dp"
+    android:scrollbars="none"
     tools:context=".fragments.StatsFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="110dp">
 
     <!-- ============ TOTAL CARD + BAR CHART (fixed) ============ -->
     <LinearLayout
@@ -147,21 +154,14 @@
             android:textSize="11sp" />
     </RelativeLayout>
 
-    <!-- ============ CATEGORY LIST (only this scrolls) ============ -->
-    <androidx.core.widget.NestedScrollView
+    <!-- ============ CATEGORY LIST ============ -->
+    <LinearLayout
+        android:id="@+id/category_list"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:background="@drawable/bg_card_white"
-        android:clipToPadding="false"
-        android:paddingBottom="110dp"
-        android:scrollbars="none">
+        android:orientation="vertical"
+        android:padding="16dp" />
 
-        <LinearLayout
-            android:id="@+id/category_list"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-    </androidx.core.widget.NestedScrollView>
-
-</LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
