@@ -13,6 +13,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.arijit.budgettracker.api.CategoryRequest
 import com.arijit.budgettracker.api.RetrofitClient
+import com.arijit.budgettracker.utils.AppRefreshBus
 import com.arijit.budgettracker.utils.Vibration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -114,6 +115,7 @@ class AddCategoryActivity : AppCompatActivity() {
                         if (isEditMode) "Cập nhật danh mục thành công" else "Đã thêm danh mục",
                         Toast.LENGTH_SHORT
                     ).show()
+                    AppRefreshBus.notifyChanged()
                     setResult(RESULT_OK, Intent().apply {
                         putExtra("selectedCategory", categoryName)
                     })

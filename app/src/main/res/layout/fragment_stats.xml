@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F2F4F8"
-    android:orientation="vertical"
+    android:fillViewport="true"
     android:padding="16dp"
+    android:scrollbars="none"
     tools:context=".fragments.StatsFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="110dp">
 
     <!-- ============ TOTAL CARD + BAR CHART (fixed) ============ -->
     <LinearLayout
@@ -27,23 +34,32 @@
                 android:id="@+id/total_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/montserrat_regular"
+                android:fontFamily="@font/montserrat_bold"
                 android:text="Tổng chi tiêu"
                 android:textColor="#999999"
-                android:textSize="11sp" />
+                android:textSize="13sp" />
 
             <TextView
-                android:id="@+id/badge_percent"
+                android:id="@+id/tv_week_range"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_below="@id/total_label"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/montserrat_regular"
+                android:text="T2 01/01 - CN 01/01"
+                android:textColor="#8E96A3"
+                android:textSize="11sp" />
+
+            <ImageButton
+                android:id="@+id/btnDatePickerStats"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:layout_alignParentEnd="true"
-                android:background="@drawable/bg_badge_percent"
-                android:fontFamily="@font/montserrat_bold"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="3dp"
-                android:text="↗ +12%"
-                android:textColor="#E53935"
-                android:textSize="10sp" />
+                android:background="@android:color/transparent"
+                android:contentDescription="Chọn ngày thống kê"
+                android:padding="4dp"
+                android:src="@android:drawable/ic_menu_my_calendar"
+                android:tint="#8E96A3" />
         </RelativeLayout>
 
         <TextView
@@ -82,6 +98,7 @@
         android:padding="16dp">
 
         <TextView
+            android:id="@+id/tv_distribution_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
@@ -118,6 +135,7 @@
         android:layout_marginBottom="10dp">
 
         <TextView
+            android:id="@+id/tv_top_categories_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/montserrat_bold"
@@ -136,21 +154,14 @@
             android:textSize="11sp" />
     </RelativeLayout>
 
-    <!-- ============ CATEGORY LIST (only this scrolls) ============ -->
-    <androidx.core.widget.NestedScrollView
+    <!-- ============ CATEGORY LIST ============ -->
+    <LinearLayout
+        android:id="@+id/category_list"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:background="@drawable/bg_card_white"
-        android:clipToPadding="false"
-        android:paddingBottom="110dp"
-        android:scrollbars="none">
+        android:orientation="vertical"
+        android:padding="16dp" />
 
-        <LinearLayout
-            android:id="@+id/category_list"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-    </androidx.core.widget.NestedScrollView>
-
-</LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

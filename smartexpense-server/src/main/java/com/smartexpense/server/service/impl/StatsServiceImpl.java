@@ -87,10 +87,12 @@ public class StatsServiceImpl implements StatsService {
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
         long startOfDay = cal.getTimeInMillis();
+        long endOfDay = startOfDay + 24L * 60 * 60 * 1000;
 
         cal.setFirstDayOfWeek(Calendar.MONDAY);
         cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
         long startOfWeek = cal.getTimeInMillis();
+        long endOfWeek = startOfWeek + 7L * 24 * 60 * 60 * 1000;
 
         cal.set(Calendar.DAY_OF_MONTH, 1);
         long startOfMonth = cal.getTimeInMillis();
@@ -98,14 +100,15 @@ public class StatsServiceImpl implements StatsService {
         cal.add(Calendar.MONTH, 1);
         long endOfMonth = cal.getTimeInMillis();
 
-        long now = System.currentTimeMillis();
-
         // Fetch all month transactions once
         List<Transaction> monthTx = transactionRepository.findByUserIdAndTimeStampBetween(
                 user.getId(), startOfMonth, endOfMonth);
 
-        BigDecimal todayAmt = sumExpense(monthTx, startOfDay, now);
-        BigDecimal weekAmt = sumExpense(monthTx, startOfWeek, now);
+        // Today = full day (00:00 → 24:00), Week = full week (Mon → next Mon),
+        // Month = full month (1st → 1st next month). This includes future-dated
+        // transactions within those boundaries.
+        BigDecimal todayAmt = sumExpense(monthTx, startOfDay, endOfDay);
+        BigDecimal weekAmt = sumExpense(monthTx, startOfWeek, endOfWeek);
         BigDecimal monthAmt = sumExpense(monthTx, startOfMonth, endOfMonth);
         BigDecimal monthIncome = sumIncome(monthTx, startOfMonth, endOfMonth);
         BigDecimal monthSavings = monthIncome.subtract(monthAmt);

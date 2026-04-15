@@ -9,6 +9,7 @@ import com.arijit.budgettracker.api.HomeOverviewResponse
 import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.api.TransactionResponse
 import com.arijit.budgettracker.db.Expense
+import com.arijit.budgettracker.utils.AppRefreshBus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -42,8 +43,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val error: LiveData<String?> = _error
 
     fun loadHomeOverview() {
-        _loading.value = true
-        _error.value = null
+        // Use postValue so this can be called from any dispatcher.
+        _loading.postValue(true)
+        _error.postValue(null)
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val api = RetrofitClient.getApiService(getApplication())
@@ -95,10 +97,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val api = RetrofitClient.getApiService(getApplication())
                 val targetId = expense.remoteId ?: return@launch
-                api.deleteExpense(targetId)
-                loadHomeOverview()
+                // Optimistic UI update: remove immediately from "recently"
+                _recentExpenses.postValue(_recentExpenses.value.orEmpty().filterNot { it.remoteId == targetId })
+
+                val resp = api.deleteExpense(targetId)
+                if (resp.isSuccessful) {
+                    // Notify all tabs to refresh immediately (Home/History/Stats).
+                    AppRefreshBus.notifyChanged()
+                    loadHomeOverview()
+                } else {
+                    _error.postValue("Không thể xóa giao dịch (${resp.code()})")
+                    // Try reload anyway to keep UI consistent with server
+                    loadHomeOverview()
+                }
             } catch (_: Exception) {
-                // ignore
+                _error.postValue("Lỗi kết nối khi xóa giao dịch")
             }
         }
     }

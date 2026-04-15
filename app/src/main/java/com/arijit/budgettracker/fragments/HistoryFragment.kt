@@ -33,6 +33,8 @@ import android.text.TextWatcher
 import android.app.DatePickerDialog
 import android.util.Log
 import android.widget.ImageButton
+import java.text.Normalizer
+import com.arijit.budgettracker.utils.AppRefreshBus
 
 class HistoryFragment : Fragment() {
     private lateinit var historyAdapter: HistoryAdapter
@@ -76,6 +78,7 @@ class HistoryFragment : Fragment() {
     // TextWatcher as member to avoid recreation and enable removal
     private lateinit var searchTextWatcher: TextWatcher
     private var hasInitialized = false
+    private var scrollToTopOnNextLoad: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -187,6 +190,12 @@ class HistoryFragment : Fragment() {
 
             // Load from API
             loadFromApi()
+
+            // Global refresh: any trans/category changes should update History immediately
+            AppRefreshBus.refreshTick.observe(viewLifecycleOwner) {
+                scrollToTopOnNextLoad = true
+                loadFromApi()
+            }
             
             // Update month labels on first load
             val calendar = Calendar.getInstance()
@@ -217,6 +226,7 @@ class HistoryFragment : Fragment() {
         }
 
         // Reload from API every time we focus the tab
+        scrollToTopOnNextLoad = true
         lifecycleScope.launch {
             try {
                 loadFromApi()
@@ -261,7 +271,16 @@ class HistoryFragment : Fragment() {
                     val expenses = response.body().orEmpty().map { it.toExpense() }
                     allLocalExpenses = expenses
                     applyLocalFilters(keyword = etSearchTransaction.text?.toString()?.trim().orEmpty())
-                    updateLocalMonthStats(expenses)
+                    // Keep stats/month labels consistent with active date filter.
+                    if (isDateSelected) {
+                        updateStatsForSelectedMonth()
+                    } else {
+                        updateLocalMonthStats(expenses)
+                    }
+                    if (scrollToTopOnNextLoad) {
+                        containerRv.scrollToPosition(0)
+                        scrollToTopOnNextLoad = false
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("HistoryFragment", "loadFromApi error: ${e.message}", e)
@@ -366,6 +385,7 @@ class HistoryFragment : Fragment() {
     }
 
     private fun applyLocalFilters(keyword: String) {
+        val keywordNorm = normalizeForSearch(keyword)
         val filtered = allLocalExpenses
             .asSequence()
             .filter { e ->
@@ -377,13 +397,10 @@ class HistoryFragment : Fragment() {
                 }
             }
             .filter { e ->
-                if (keyword.isBlank()) true
-                else {
-                    val k = keyword.lowercase()
-                    e.category.lowercase().contains(k) ||
-                        e.name.lowercase().contains(k) ||
-                        e.note.lowercase().contains(k)
-                }
+                if (keywordNorm.isBlank()) true
+                else normalizeForSearch(e.category).contains(keywordNorm) ||
+                    normalizeForSearch(e.name).contains(keywordNorm) ||
+                    normalizeForSearch(e.note).contains(keywordNorm)
             }
             .filter { e ->
                 if (!isDateSelected) true
@@ -405,6 +422,15 @@ class HistoryFragment : Fragment() {
         val grouped = groupExpensesByDate(filtered)
         displayedTransactions = grouped
         historyAdapter.submitList(grouped)
+    }
+
+    private fun normalizeForSearch(input: String?): String {
+        if (input.isNullOrBlank()) return ""
+        val lower = input.trim().lowercase()
+        val noMarks = Normalizer.normalize(lower, Normalizer.Form.NFD)
+            .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+        // Vietnamese specific: đ/Đ is not a combining mark
+        return noMarks.replace('đ', 'd')
     }
 
     private fun updateLocalMonthStats(expenses: List<Expense>) {
@@ -529,5 +555,14 @@ class HistoryFragment : Fragment() {
 
         applyLocalFilters(keyword = "")
         updateLocalMonthStats(allLocalExpenses)
+
+        // Restore month labels to current month after clearing date filter.
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.DAY_OF_MONTH, 1)
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        updateMonthLabels(cal.timeInMillis)
     }
 }

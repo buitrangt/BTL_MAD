@@ -21,6 +21,7 @@ import com.arijit.budgettracker.utils.SyncManager
 import com.arijit.budgettracker.utils.TokenManager
 import com.arijit.budgettracker.utils.Vibration
 import com.arijit.budgettracker.utils.CurrencyPrefs
+import com.arijit.budgettracker.utils.AppRefreshBus
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
@@ -32,6 +33,7 @@ class HomeFragment : Fragment() {
     private lateinit var welcomeName: TextView
     private lateinit var viewModel: HomeViewModel
     private lateinit var adapter: HomeRecentAdapter
+    private lateinit var recyclerView: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,7 +62,7 @@ class HomeFragment : Fragment() {
         val name = TokenManager.getName(requireContext())?.takeIf { it.isNotBlank() } ?: "User"
         welcomeName.text = name
 
-        val recyclerView = view.findViewById<RecyclerView>(R.id.recent_rv)
+        recyclerView = view.findViewById(R.id.recent_rv)
         adapter = HomeRecentAdapter()
         recyclerView.adapter = adapter
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -89,6 +91,13 @@ class HomeFragment : Fragment() {
         viewModel = ViewModelProvider(this)[HomeViewModel::class.java]
         viewModel.recentExpenses.observe(viewLifecycleOwner) { expenses ->
             adapter.submitList(expenses)
+            if (expenses.isNotEmpty()) {
+                recyclerView.post {
+                    (recyclerView.layoutManager as? LinearLayoutManager)
+                        ?.scrollToPositionWithOffset(0, 0)
+                        ?: recyclerView.scrollToPosition(0)
+                }
+            }
         }
 
 
@@ -106,6 +115,11 @@ class HomeFragment : Fragment() {
 
         // Load data from API
         viewModel.loadHomeOverview()
+
+        // Global refresh: any trans/category changes should update Home immediately
+        AppRefreshBus.refreshTick.observe(viewLifecycleOwner) {
+            viewModel.loadHomeOverview()
+        }
 
         return view
     }
