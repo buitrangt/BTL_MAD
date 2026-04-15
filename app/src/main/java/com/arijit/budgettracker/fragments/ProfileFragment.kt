@@ -21,10 +21,12 @@ import java.util.TimeZone
 
 class ProfileFragment : Fragment() {
     private lateinit var vm: ProfileViewModel
-
+    private lateinit var tvUserName: TextView // Khai báo biến toàn cục trong class
+    private lateinit var tvUserEmail: TextView
     override fun onResume() {
         super.onResume()
         if (::vm.isInitialized) vm.loadStats()
+        updateUserUI()
     }
 
     override fun onCreateView(
@@ -34,10 +36,10 @@ class ProfileFragment : Fragment() {
     ): View {
         val view = inflater.inflate(R.layout.activity_user_profile, container, false)
 
-        val tvUserName = view.findViewById<TextView>(R.id.tvUserName)
+        tvUserName = view.findViewById<TextView>(R.id.tvUserName)
         tvUserName.text = TokenManager.getName(requireContext())?.takeIf { it.isNotBlank() } ?: "Người dùng"
 
-        val tvUserEmail = view.findViewById<TextView>(R.id.tvUserEmail)
+        tvUserEmail = view.findViewById<TextView>(R.id.tvUserEmail)
         tvUserEmail.text = TokenManager.getEmail(requireContext()) ?: ""
 
         val tvBalance = view.findViewById<TextView>(R.id.tvBalance)
@@ -82,8 +84,13 @@ class ProfileFragment : Fragment() {
             startActivity(intent)
             activity?.finish()
         }
-
+        updateUserUI()
         return view
+    }
+    private fun updateUserUI() {
+        val context = context ?: return
+        tvUserName.text = TokenManager.getName(context)?.takeIf { it.isNotBlank() } ?: "Người dùng"
+        tvUserEmail.text = TokenManager.getEmail(context) ?: ""
     }
 }
 
