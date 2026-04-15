@@ -14,4 +14,9 @@ public class InsightsSummaryDto {
     private ClassificationDto classification;
     private List<AnomalyDto> anomalies;
     private List<BudgetSuggestionDto> budgetSuggestions;
+    /**
+     * Optional AI-generated narrative/advice for the Insights screen.
+     * Kept as plain text so the mobile UI can render it easily.
+     */
+    private String aiNarrative;
 }

@@ -88,7 +88,8 @@ data class InsightsSummaryDto(
     val prediction: PredictionDto?,
     val classification: ClassificationDto?,
     val anomalies: List<AnomalyDto>,
-    val budgetSuggestions: List<BudgetSuggestionDto>
+    val budgetSuggestions: List<BudgetSuggestionDto>,
+    val aiNarrative: String? = null
 )
 
 // ======== CHAT DTOs ========

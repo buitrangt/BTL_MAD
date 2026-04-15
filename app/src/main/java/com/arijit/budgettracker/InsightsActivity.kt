@@ -49,6 +49,9 @@ class InsightsActivity : AppCompatActivity() {
     // Suggestions
     private lateinit var budgetList: LinearLayout
 
+    // AI narrative
+    private lateinit var tvAiNarrative: TextView
+
     private lateinit var progressBar: ProgressBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -80,6 +83,7 @@ class InsightsActivity : AppCompatActivity() {
         tvCategoryDescription = findViewById(R.id.tvCategoryDescription)
 
         budgetList = findViewById(R.id.budgetList)
+        tvAiNarrative = findViewById(R.id.tvAiNarrative)
         progressBar = findViewById(R.id.progressBar)
 
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
@@ -105,6 +109,7 @@ class InsightsActivity : AppCompatActivity() {
         renderPrediction(data.prediction)
         renderAlert(data.anomalies)
         renderClassification(data.classification)
+        renderAiNarrative(data.aiNarrative)
         renderBudgets(data.budgetSuggestions)
     }
 
@@ -278,4 +283,8 @@ class InsightsActivity : AppCompatActivity() {
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
+
+    private fun renderAiNarrative(text: String?) {
+        tvAiNarrative.text = text?.takeIf { it.isNotBlank() } ?: "Chưa cấu hình AI hoặc chưa đủ dữ liệu."
+    }
 }
