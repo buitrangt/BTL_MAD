@@ -59,8 +59,7 @@ class HomeFragment : Fragment() {
             startActivity(Intent(requireContext(), com.arijit.budgettracker.InsightsActivity::class.java))
         }
 
-        val name = TokenManager.getName(requireContext())?.takeIf { it.isNotBlank() } ?: "User"
-        welcomeName.text = name
+        refreshWelcomeName()
 
         recyclerView = view.findViewById(R.id.recent_rv)
         adapter = HomeRecentAdapter()
@@ -119,6 +118,7 @@ class HomeFragment : Fragment() {
         // Global refresh: any trans/category changes should update Home immediately
         AppRefreshBus.refreshTick.observe(viewLifecycleOwner) {
             viewModel.loadHomeOverview()
+            refreshWelcomeName()
         }
 
         return view
@@ -128,6 +128,13 @@ class HomeFragment : Fragment() {
         super.onResume()
         // Refresh from API when returning to Home tab
         viewModel.loadHomeOverview()
+        refreshWelcomeName()
+    }
+
+    private fun refreshWelcomeName() {
+        if (!::welcomeName.isInitialized) return
+        val name = TokenManager.getName(requireContext())?.takeIf { it.isNotBlank() } ?: "User"
+        welcomeName.text = name
     }
 
     private fun showDeleteConfirmDialog(expense: com.arijit.budgettracker.db.Expense) {
