@@ -11,12 +11,23 @@
         android:layout_height="wrap_content"
         android:background="#FFFFFF"
         android:gravity="center_vertical"
-        android:padding="16dp"
+        android:padding="12dp"
         android:elevation="4dp">
 
-        <ImageView
+        <ImageButton
+            android:id="@+id/btnBack"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Quay lại"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="#1A202C"
+            xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="8dp"
             android:contentDescription="Bot Avatar"
             android:src="@drawable/ic_bot_avatar" />
 
@@ -92,17 +103,6 @@
                 android:src="@drawable/ic_send" />
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:background="#F9FAFB">
-            <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:contentDescription="Home" android:src="@drawable/ic_home" />
-            <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:contentDescription="History" android:src="@drawable/ic_history" />
-            <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:contentDescription="Statistics" android:src="@drawable/ic_bar_chart" />
-            <ImageView android:layout_width="0dp" android:layout_weight="1" android:layout_height="24dp" android:contentDescription="Profile" android:src="@drawable/ic_user" />
-        </LinearLayout>
     </LinearLayout>
 
 </RelativeLayout>
