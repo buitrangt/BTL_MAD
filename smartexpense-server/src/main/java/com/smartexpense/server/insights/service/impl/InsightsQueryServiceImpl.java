@@ -39,11 +39,17 @@ public class InsightsQueryServiceImpl implements InsightsQueryService {
         int month = today.getMonthValue();
         int year = today.getYear();
 
-        // Cache check: if prediction missing → trigger compute synchronously
-        boolean hasPrediction = predictionRepo
+        // Cache check:
+        // - if prediction missing → compute
+        // - if prediction exists but legacy status (e.g. "COMPLETED") → recompute once to stamp provider
+        AiPrediction prediction = predictionRepo
                 .findByUserIdAndMonthAndYear(user.getId(), month, year)
-                .isPresent();
-        if (!hasPrediction) {
+                .orElse(null);
+        boolean needsCompute = prediction == null
+                || prediction.getStatus() == null
+                || "COMPLETED".equalsIgnoreCase(prediction.getStatus())
+                || "PROCESSING".equalsIgnoreCase(prediction.getStatus());
+        if (needsCompute) {
             computeService.computeAllForUser(user.getId(), month, year);
         }
 

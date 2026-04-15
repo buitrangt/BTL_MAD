@@ -29,8 +29,6 @@ class InsightsActivity : AppCompatActivity() {
     // Prediction
     private lateinit var tvPredicted: TextView
     private lateinit var tvPredictedNote: TextView
-    private lateinit var progressCurrentFill: View
-    private lateinit var progressPredictedFill: View
 
     // Alert
     private lateinit var alertBadgeTitle: TextView
@@ -67,8 +65,6 @@ class InsightsActivity : AppCompatActivity() {
         // bind views
         tvPredicted = findViewById(R.id.tvPredicted)
         tvPredictedNote = findViewById(R.id.tvPredictedNote)
-        progressCurrentFill = findViewById(R.id.progressCurrentFill)
-        progressPredictedFill = findViewById(R.id.progressPredictedFill)
 
         alertBadgeTitle = findViewById(R.id.alertBadgeTitle)
         alertBadgeDesc = findViewById(R.id.alertBadgeDesc)
@@ -122,19 +118,6 @@ class InsightsActivity : AppCompatActivity() {
         }
         tvPredicted.text = CurrencyPrefs.format(p.predictedAmount)
         tvPredictedNote.text = "Dự kiến chi đến cuối tháng (hiện ${CurrencyPrefs.format(p.currentAmount)})"
-
-        // Set progress bar weights based on current vs predicted
-        val current = p.currentAmount
-        val predicted = p.predictedAmount.coerceAtLeast(current)
-        val remaining = (predicted - current).coerceAtLeast(0.0)
-
-        val params1 = progressCurrentFill.layoutParams as LinearLayout.LayoutParams
-        params1.weight = current.toFloat().coerceAtLeast(0.01f)
-        progressCurrentFill.layoutParams = params1
-
-        val params2 = progressPredictedFill.layoutParams as LinearLayout.LayoutParams
-        params2.weight = remaining.toFloat().coerceAtLeast(0.01f)
-        progressPredictedFill.layoutParams = params2
     }
 
     // ===== Alert (top anomaly) =====

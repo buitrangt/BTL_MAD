@@ -80,7 +80,8 @@ public class InsightsComputeServiceImpl implements InsightsComputeService {
     // ===== PREDICTION =====
     private void computePrediction(Long userId, int month, int year, List<Transaction> txs) {
         BigDecimal current = forecastEngine.currentMonthTotal(txs, month, year);
-        BigDecimal predicted = forecastEngine.predictMonthlyTotal(txs, month, year);
+        ForecastEngine.ForecastResult result = forecastEngine.predictMonthlyTotalResult(txs, month, year);
+        BigDecimal predicted = result.predictedAmount;
 
         AiPrediction entity = predictionRepo
                 .findByUserIdAndMonthAndYear(userId, month, year)
@@ -92,7 +93,7 @@ public class InsightsComputeServiceImpl implements InsightsComputeService {
 
         entity.setCurrentAmount(current);
         entity.setPredictedAmount(predicted);
-        entity.setStatus("COMPLETED");
+        entity.setStatus("COMPLETED_" + result.provider);
         predictionRepo.save(entity);
     }
 

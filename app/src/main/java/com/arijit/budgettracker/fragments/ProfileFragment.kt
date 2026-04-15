@@ -16,6 +16,8 @@ import com.arijit.budgettracker.models.ProfileViewModel
 import com.arijit.budgettracker.utils.CurrencyPrefs
 import com.arijit.budgettracker.utils.TokenManager
 import com.arijit.budgettracker.utils.Vibration
+import java.util.Calendar
+import java.util.TimeZone
 
 class ProfileFragment : Fragment() {
     private lateinit var vm: ProfileViewModel
@@ -40,7 +42,16 @@ class ProfileFragment : Fragment() {
 
         val tvBalance = view.findViewById<TextView>(R.id.tvBalance)
         val tvSpent = view.findViewById<TextView>(R.id.tvSpent)
+        val tvBalancePeriod = view.findViewById<TextView>(R.id.tvBalancePeriod)
+        val tvSpentPeriod = view.findViewById<TextView>(R.id.tvSpentPeriod)
         val btnLogout = view.findViewById<View>(R.id.btnLogout)
+
+        val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Bangkok"))
+        val month = cal.get(Calendar.MONTH) + 1
+        val year = cal.get(Calendar.YEAR)
+        val periodText = "Tháng $month/$year"
+        tvBalancePeriod.text = periodText
+        tvSpentPeriod.text = periodText
 
         vm = ViewModelProvider(this)[ProfileViewModel::class.java]
         vm.balance.observe(viewLifecycleOwner) { tvBalance.text = CurrencyPrefs.format(it) }
