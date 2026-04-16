@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
@@ -28,6 +29,7 @@ public class InsightsQueryServiceImpl implements InsightsQueryService {
     private final AiAnomalyRepository anomalyRepo;
     private final AiClassificationRepository classificationRepo;
     private final AiBudgetSuggestionRepository budgetRepo;
+    private final TransactionRepository transactionRepository;
 
     private final InsightsComputeService computeService;
     private final GeminiService geminiService;
@@ -45,10 +47,18 @@ public class InsightsQueryServiceImpl implements InsightsQueryService {
         AiPrediction prediction = predictionRepo
                 .findByUserIdAndMonthAndYear(user.getId(), month, year)
                 .orElse(null);
+
+        boolean hasAnyExpenseThisMonth = hasAnyExpenseThisMonth(user.getId());
+        boolean isZeroPrediction = prediction != null
+                && prediction.getPredictedAmount() != null
+                && prediction.getPredictedAmount().compareTo(BigDecimal.ZERO) == 0
+                && hasAnyExpenseThisMonth;
+
         boolean needsCompute = prediction == null
                 || prediction.getStatus() == null
                 || "COMPLETED".equalsIgnoreCase(prediction.getStatus())
-                || "PROCESSING".equalsIgnoreCase(prediction.getStatus());
+                || "PROCESSING".equalsIgnoreCase(prediction.getStatus())
+                || isZeroPrediction;
         if (needsCompute) {
             computeService.computeAllForUser(user.getId(), month, year);
         }
@@ -226,5 +236,13 @@ public class InsightsQueryServiceImpl implements InsightsQueryService {
     private User findUser(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    private boolean hasAnyExpenseThisMonth(Long userId) {
+        LocalDate today = LocalDate.now(ZONE);
+        LocalDate startOfMonth = LocalDate.of(today.getYear(), today.getMonthValue(), 1);
+        long start = startOfMonth.atStartOfDay(ZONE).toInstant().toEpochMilli();
+        long end = startOfMonth.plusMonths(1).atStartOfDay(ZONE).toInstant().toEpochMilli();
+        return !transactionRepository.findByUserIdAndTypeAndTimeStampBetween(userId, "expense", start, end).isEmpty();
     }
 }
