@@ -1,6 +1,7 @@
 package com.arijit.budgettracker
 
 import android.os.Bundle
+import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
@@ -32,6 +33,14 @@ class FinChatActivity : AppCompatActivity() {
         rvChat = findViewById(R.id.rvChat)
         val etMessage = findViewById<EditText>(R.id.etMessage)
         btnSend = findViewById(R.id.btnSend)
+
+        val btnBack = findViewById<ImageButton>(R.id.btnBack)
+        val goBack = View.OnClickListener {
+            Toast.makeText(this, "Quay lại", Toast.LENGTH_SHORT).show()
+            onBackPressedDispatcher.onBackPressed()
+        }
+        btnBack.setOnClickListener(goBack)
+        btnBack.bringToFront()
 
         adapter = ChatAdapter(chatList)
         rvChat.layoutManager = LinearLayoutManager(this).apply {

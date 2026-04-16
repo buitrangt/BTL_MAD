@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -11,18 +12,22 @@
         android:layout_height="wrap_content"
         android:background="#FFFFFF"
         android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:padding="12dp"
         android:elevation="4dp">
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
             android:contentDescription="Quay lại"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
             android:src="@drawable/ic_arrow_back"
-            app:tint="#1A202C"
-            xmlns:app="http://schemas.android.com/apk/res-auto" />
+            app:tint="#1A202C" />
 
         <ImageView
             android:layout_width="36dp"
@@ -41,11 +46,6 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:contentDescription="More options"
-            android:src="@drawable/ic_more_vert" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
