@@ -5,7 +5,7 @@
     android:paddingStart="15dp"
     android:paddingEnd="20dp"
     android:layout_marginBottom="10dp"
-    android:background="@drawable/expense_bg">
+    android:background="@drawable/transaction_bg">
 
     <TextView
         android:id="@+id/textViewAmount"

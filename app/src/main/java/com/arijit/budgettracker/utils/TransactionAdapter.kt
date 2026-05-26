@@ -11,11 +11,11 @@ import com.arijit.budgettracker.R
 import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.utils.CurrencyPrefs
 
-class ExpenseAdapter(
+class TransactionAdapter(
     var onItemLongClick: ((Expense) -> Unit)? = null,
     var onEditClick: ((Expense) -> Unit)? = null,
     var onDeleteClick: ((Expense) -> Unit)? = null
-) : ListAdapter<Expense, ExpenseAdapter.ExpenseViewHolder>(DIFF_CALLBACK) {
+) : ListAdapter<Expense, TransactionAdapter.ExpenseViewHolder>(DIFF_CALLBACK) {
 
     companion object {
         private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Expense>() {
@@ -55,7 +55,7 @@ class ExpenseAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ExpenseViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_expense, parent, false)
+            .inflate(R.layout.item_transaction, parent, false)
         return ExpenseViewHolder(view)
     }
 

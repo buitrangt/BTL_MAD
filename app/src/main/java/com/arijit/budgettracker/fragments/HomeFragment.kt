@@ -142,7 +142,7 @@ class HomeFragment : Fragment() {
             .setTitle("Xóa giao dịch")
             .setMessage("Bạn có chắc muốn xóa giao dịch này?")
             .setPositiveButton("Xóa") { _, _ ->
-                viewModel.deleteExpense(expense)
+                viewModel.deleteTransaction(expense)
             }
             .setNegativeButton("Hủy", null)
             .show()

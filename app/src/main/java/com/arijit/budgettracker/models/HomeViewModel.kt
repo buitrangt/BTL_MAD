@@ -83,7 +83,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             remoteId = id,
             amount = amount,
             name = name,
-            category = categoryName ?: name,
+            category = category ?: name ?: "Khac",
             note = note ?: "",
             type = type.lowercase(),
             timeStamp = timeStamp,
@@ -92,7 +92,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    fun deleteExpense(expense: Expense) {
+    fun deleteTransaction(expense: Expense) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val api = RetrofitClient.getApiService(getApplication())
@@ -100,7 +100,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 // Optimistic UI update: remove immediately from "recently"
                 _recentExpenses.postValue(_recentExpenses.value.orEmpty().filterNot { it.remoteId == targetId })
 
-                val resp = api.deleteExpense(targetId)
+                val resp = api.deleteTransaction(targetId)
                 if (resp.isSuccessful) {
                     // Notify all tabs to refresh immediately (Home/History/Stats).
                     AppRefreshBus.notifyChanged()

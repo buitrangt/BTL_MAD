@@ -8,15 +8,15 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(entities = [Expense::class, Category::class, SmsTemplate::class, SmsTransactionEntity::class], version = 9, exportSchema = false)
-abstract class ExpenseDatabase : RoomDatabase() {
-    abstract fun expenseDao(): ExpenseDao
+abstract class TransactionDatabase : RoomDatabase() {
+    abstract fun expenseDao(): TransactionDao
     abstract fun categoryDao(): CategoryDao
     abstract fun smsTemplateDao(): SmsTemplateDao
     abstract fun smsTransactionDao(): SmsTransactionDao
 
     companion object {
         @Volatile
-        private var INSTANCE: ExpenseDatabase? = null
+        private var INSTANCE: TransactionDatabase? = null
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -109,11 +109,11 @@ abstract class ExpenseDatabase : RoomDatabase() {
             }
         }
 
-        fun getDatabase(context: Context): ExpenseDatabase {
+        fun getDatabase(context: Context): TransactionDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
-                    ExpenseDatabase::class.java,
+                    TransactionDatabase::class.java,
                     "expense_database"
                 )
                 .addMigrations(

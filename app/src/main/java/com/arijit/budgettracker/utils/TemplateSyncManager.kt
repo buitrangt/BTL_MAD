@@ -3,7 +3,7 @@ package com.arijit.budgettracker.utils
 import android.content.Context
 import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.api.SmsTemplateDto
-import com.arijit.budgettracker.db.ExpenseDatabase
+import com.arijit.budgettracker.db.TransactionDatabase
 import com.arijit.budgettracker.db.SmsTemplate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -27,7 +27,7 @@ object TemplateSyncManager {
                         )
                     } ?: return@withContext
 
-                    val dao = ExpenseDatabase.getDatabase(context).smsTemplateDao()
+                    val dao = TransactionDatabase.getDatabase(context).smsTemplateDao()
                     dao.upsertAll(templates)
                 }
             } catch (e: Exception) {

@@ -13,7 +13,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
-import com.arijit.budgettracker.db.ExpenseDatabase
+import com.arijit.budgettracker.db.TransactionDatabase
 import com.arijit.budgettracker.db.SmsTemplate
 import com.arijit.budgettracker.sms.SmsNotificationHelper
 import com.arijit.budgettracker.utils.SyncManager
@@ -115,7 +115,7 @@ class MainActivity : BaseActivity() {
     }
 
     private suspend fun seedSmsTemplates() {
-        val dao = ExpenseDatabase.getDatabase(this).smsTemplateDao()
+        val dao = TransactionDatabase.getDatabase(this).smsTemplateDao()
         val existing = dao.getActiveTemplates()
         if (existing.isNotEmpty()) return
 

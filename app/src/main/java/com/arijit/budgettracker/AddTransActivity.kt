@@ -1,4 +1,4 @@
-package com.arijit.budgettracker
+﻿package com.arijit.budgettracker
 
 import android.os.Bundle
 import android.view.View
@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
-import com.arijit.budgettracker.api.ExpenseRequest
+import com.arijit.budgettracker.api.TransactionRequest
 import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.db.Expense
 import com.arijit.budgettracker.utils.AppRefreshBus
@@ -111,15 +111,15 @@ class AddTransActivity : AppCompatActivity() {
     }
 
     private fun updateConfirmButtonText() {
-        confirmBtn.text = "Cập nhật"
+        confirmBtn.text = "Cáº­p nháº­t"
     }
 
     private fun setupTypeSelection() {
         typeBtn.setOnClickListener {
             Vibration.vibrate(this, 50)
-            val options = arrayOf("KHOẢN CHI", "KHOẢN THU")
+            val options = arrayOf("KHOáº¢N CHI", "KHOáº¢N THU")
             android.app.AlertDialog.Builder(this)
-                .setTitle("Chọn loại giao dịch")
+                .setTitle("Chá»n loáº¡i giao dá»‹ch")
                 .setItems(options) { _, which ->
                     transactionType = if (which == 0) "expense" else "income"
                     updateTypeDisplay()
@@ -130,7 +130,7 @@ class AddTransActivity : AppCompatActivity() {
 
     private fun updateTypeDisplay() {
         val tvType = typeBtn.findViewById<TextView>(R.id.tvType)
-        tvType.text = if (transactionType == "expense") "KHOẢN CHI" else "KHOẢN THU"
+        tvType.text = if (transactionType == "expense") "KHOáº¢N CHI" else "KHOáº¢N THU"
         
         // Change badge background color and dot based on type
         if (transactionType == "expense") {
@@ -167,7 +167,7 @@ class AddTransActivity : AppCompatActivity() {
 
     private fun updateCategoryDisplay() {
         val tvCategory = catgBtn.findViewById<TextView>(R.id.tvCategory)
-        tvCategory.text = if (selectedCategory.isEmpty()) "CHỌN DANH MỤC" else selectedCategory
+        tvCategory.text = if (selectedCategory.isEmpty()) "CHá»ŒN DANH Má»¤C" else selectedCategory
     }
 
     private fun setupDatePicker() {
@@ -191,7 +191,7 @@ class AddTransActivity : AppCompatActivity() {
             
             val datePicker = MaterialDatePicker.Builder.datePicker()
                 .setSelection(utcSelection)
-                .setTitleText("Chọn ngày")
+                .setTitleText("Chá»n ngÃ y")
                 .build()
             
             datePicker.addOnPositiveButtonClickListener { selection ->
@@ -263,7 +263,7 @@ class AddTransActivity : AppCompatActivity() {
             Vibration.vibrate(this, 100)
             selectedNote = noteInput.text.toString().trim()
             if (selectedAmount.isEmpty() || selectedCategory.isEmpty()) {
-                Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Vui lÃ²ng nháº­p Ä‘áº§y Ä‘á»§ thÃ´ng tin", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             saveTransaction()
@@ -274,9 +274,10 @@ class AddTransActivity : AppCompatActivity() {
         confirmBtn.isEnabled = false
         lifecycleScope.launch {
             val api = RetrofitClient.getApiService(applicationContext)
-            val request = ExpenseRequest(
+            val request = TransactionRequest(
+                name = selectedCategory.trim(),
                 amount = selectedAmount.toDoubleOrNull() ?: 0.0,
-                category = selectedCategory.trim(),
+                categoryName = selectedCategory.trim(),
                 timeStamp = selectedDate,
                 note = selectedNote.takeIf { it.isNotBlank() },
                 type = transactionType
@@ -285,16 +286,16 @@ class AddTransActivity : AppCompatActivity() {
             try {
                 val response = withContext(Dispatchers.IO) {
                     if (isEditMode && editingRemoteId != null) {
-                        api.updateExpense(editingRemoteId!!, request)
+                        api.updateTransaction(editingRemoteId!!, request)
                     } else {
-                        api.createExpense(request)
+                        api.createTransaction(request)
                     }
                 }
 
                 if (response.isSuccessful) {
                     Toast.makeText(
                         this@AddTransActivity,
-                        if (isEditMode) "Cập nhật thành công" else "Đã thêm giao dịch",
+                        if (isEditMode) "Cáº­p nháº­t thÃ nh cÃ´ng" else "ÄÃ£ thÃªm giao dá»‹ch",
                         Toast.LENGTH_SHORT
                     ).show()
                     AppRefreshBus.notifyChanged()
@@ -302,7 +303,7 @@ class AddTransActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(
                         this@AddTransActivity,
-                        "Lỗi: ${response.code()}",
+                        "Lá»—i: ${response.code()}",
                         Toast.LENGTH_SHORT
                     ).show()
                     confirmBtn.isEnabled = true
@@ -310,7 +311,7 @@ class AddTransActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Toast.makeText(
                     this@AddTransActivity,
-                    "Lỗi kết nối: ${e.message}",
+                    "Lá»—i káº¿t ná»‘i: ${e.message}",
                     Toast.LENGTH_SHORT
                 ).show()
                 confirmBtn.isEnabled = true

@@ -6,7 +6,7 @@ import android.content.Intent
 import android.provider.Telephony
 import android.util.Log
 import com.arijit.budgettracker.db.Expense
-import com.arijit.budgettracker.db.ExpenseDatabase
+import com.arijit.budgettracker.db.TransactionDatabase
 import com.arijit.budgettracker.db.SmsTransactionEntity
 import com.arijit.budgettracker.utils.SyncManager
 import kotlinx.coroutines.CoroutineScope
@@ -43,7 +43,7 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
     }
 
     private suspend fun processSms(context: Context, sender: String, smsContent: String) {
-        val db = ExpenseDatabase.getDatabase(context)
+        val db = TransactionDatabase.getDatabase(context)
         val templates = db.smsTemplateDao().getActiveTemplates()
         Log.d("SmsReceiver", "Loaded ${templates.size} templates")
 
@@ -66,7 +66,7 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
             type = parsed.type.lowercase(),
             name = "SMS - ${parsed.bankName}"
         )
-        val expenseId = db.expenseDao().insertExpenseAndGetId(expense)
+        val expenseId = db.expenseDao().insertTransactionAndGetId(expense)
         Log.d("SmsReceiver", "Inserted expense id=$expenseId amount=${parsed.amount}")
 
         val smsTransaction = SmsTransactionEntity(

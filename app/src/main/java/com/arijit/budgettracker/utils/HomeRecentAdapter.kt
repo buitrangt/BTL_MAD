@@ -57,7 +57,7 @@ class HomeRecentAdapter(
 
         private fun showPopupMenu(view: View, expense: Expense) {
             val popup = PopupMenu(view.context, view)
-            popup.menuInflater.inflate(R.menu.menu_expense_action, popup.menu)
+            popup.menuInflater.inflate(R.menu.menu_transaction_action, popup.menu)
             popup.setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.action_edit -> {
@@ -95,7 +95,7 @@ class HomeRecentAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HomeRecentViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_home_expense, parent, false)
+            .inflate(R.layout.item_home_transaction, parent, false)
         return HomeRecentViewHolder(view)
     }
 

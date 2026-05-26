@@ -15,6 +15,8 @@ public class TransactionRequest {
 
     private Long categoryId;
 
+    private String categoryName;
+
     @NotBlank
     private String type;
 

@@ -6,27 +6,20 @@ import retrofit2.Response
 import retrofit2.http.*
 
 // DTOs
-data class ExpenseRequest(
+data class TransactionRequest(
+    val name: String,
     val amount: Double,
-    val category: String,
+    val categoryName: String,
     val timeStamp: Long,
     val note: String? = null,
     val type: String? = null
-)
-data class ExpenseResponse(
-    val id: Long,
-    val amount: Double,
-    val category: String,
-    val type: String? = null,
-    val note: String? = null,
-    val timeStamp: Long
 )
 data class TransactionResponse(
     val id: Long,
     val name: String,
     val amount: Double,
     val categoryId: Long?,
-    val categoryName: String?,
+    @com.google.gson.annotations.SerializedName("categoryName") val category: String?,
     val type: String,
     val note: String?,
     val timeStamp: Long
@@ -106,7 +99,7 @@ data class ChatMessageDto(
 // ======== ADMIN DTOs ========
 data class AdminUserDto(
     val id: Long,
-    val name: String?,
+    val name: String,
     val email: String,
     val phone: String?,
     val role: String?,
@@ -155,21 +148,17 @@ interface ApiService {
     @GET("api/transactions/search")
     suspend fun searchTransactions(@Query("keyword") keyword: String): Response<List<TransactionResponse>>
 
-    // Expenses
-    @GET("api/expenses")
-    suspend fun getAllExpenses(): Response<List<ExpenseResponse>>
+    @POST("api/transactions")
+    suspend fun createTransaction(@Body request: TransactionRequest): Response<TransactionResponse>
 
-    @POST("api/expenses")
-    suspend fun createExpense(@Body request: ExpenseRequest): Response<ExpenseResponse>
+    @PUT("api/transactions/{id}")
+    suspend fun updateTransaction(@Path("id") id: Long, @Body request: TransactionRequest): Response<TransactionResponse>
 
-    @PUT("api/expenses/{id}")
-    suspend fun updateExpense(@Path("id") id: Long, @Body request: ExpenseRequest): Response<ExpenseResponse>
+    @DELETE("api/transactions/{id}")
+    suspend fun deleteTransaction(@Path("id") id: Long): Response<Void>
 
-    @DELETE("api/expenses/{id}")
-    suspend fun deleteExpense(@Path("id") id: Long): Response<Void>
-
-    @POST("api/expenses/sync")
-    suspend fun syncExpenses(@Body requests: List<ExpenseRequest>): Response<List<ExpenseResponse>>
+    @POST("api/transactions/sync")
+    suspend fun syncTransactions(@Body requests: List<TransactionRequest>): Response<List<TransactionResponse>>
 
     // Categories
     @GET("api/categories")

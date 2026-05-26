@@ -9,18 +9,18 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface ExpenseDao {
+interface TransactionDao {
     @Insert
-    suspend fun insertExpense(expense: Expense)
+    suspend fun insertTransaction(expense: Expense)
 
     @Insert
-    suspend fun insertExpenseAndGetId(expense: Expense): Long
+    suspend fun insertTransactionAndGetId(expense: Expense): Long
 
     @Insert
-    suspend fun insertExpenses(expenses: List<Expense>)
+    suspend fun insertTransactions(expenses: List<Expense>)
 
     @Update
-    suspend fun updateExpense(expense: Expense)
+    suspend fun updateTransaction(expense: Expense)
 
     @Query("SELECT * FROM expenses WHERE id = :id LIMIT 1")
     suspend fun getById(id: Int): Expense?
@@ -32,7 +32,7 @@ interface ExpenseDao {
     suspend fun getOneByIdentity(amount: Double, category: String, timeStamp: Long): Expense?
 
     @Query("SELECT * FROM expenses ORDER BY timestamp DESC")
-    fun getAllExpensesFlow(): Flow<List<Expense>>
+    fun getAllTransactionsFlow(): Flow<List<Expense>>
 
     @Query("""
         SELECT *
@@ -45,7 +45,7 @@ interface ExpenseDao {
     fun getLatest8Expenses(): LiveData<List<Expense>>
 
     @Delete
-    suspend fun deleteExpense(expense: Expense)
+    suspend fun deleteTransaction(expense: Expense)
 
     @Query("DELETE FROM expenses WHERE remoteId = :remoteId")
     suspend fun deleteByRemoteId(remoteId: Long)
@@ -54,16 +54,16 @@ interface ExpenseDao {
     suspend fun deleteAll()
 
     @Query("SELECT * FROM expenses WHERE synced = 0")
-    suspend fun getUnsyncedExpenses(): List<Expense>
+    suspend fun getUnsyncedTransactions(): List<Expense>
 
     @Query("UPDATE expenses SET synced = 1 WHERE id IN (:ids)")
     suspend fun markAsSynced(ids: List<Int>)
 
     @Query("SELECT COUNT(*) FROM expenses WHERE category = :categoryName")
-    suspend fun getExpenseCountByCategory(categoryName: String): Int
+    suspend fun getTransactionCountByCategory(categoryName: String): Int
 
     @Query("UPDATE expenses SET category = :newCategoryName WHERE category = :oldCategoryName")
-    suspend fun updateExpenseCategoryName(oldCategoryName: String, newCategoryName: String)
+    suspend fun updateTransactionCategoryName(oldCategoryName: String, newCategoryName: String)
 
     @Query("SELECT COUNT(*) FROM expenses WHERE amount = :amount AND category = :category AND note = :note AND type = :type AND timestamp = :timeStamp")
     suspend fun countBySignature(

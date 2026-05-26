@@ -17,7 +17,7 @@ import com.arijit.budgettracker.api.ApiService
 import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.api.TransactionResponse
 import com.arijit.budgettracker.db.Expense
-import com.arijit.budgettracker.models.DailyExpense
+import com.arijit.budgettracker.models.DailyTransaction
 import com.arijit.budgettracker.utils.HistoryAdapter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -61,7 +61,7 @@ class HistoryFragment : Fragment() {
 
     // Local-first: keep a snapshot for filtering (search/date)
     private var allLocalExpenses: List<Expense> = emptyList()
-    private var displayedTransactions: List<DailyExpense> = emptyList()
+    private var displayedTransactions: List<DailyTransaction> = emptyList()
     
     // Search job for cancellation
     private var searchJob: Job? = null
@@ -171,7 +171,7 @@ class HistoryFragment : Fragment() {
                                     val targetId = expense.remoteId
                                     if (targetId != null) {
                                         withContext(Dispatchers.IO) {
-                                            apiService.deleteExpense(targetId)
+                                            apiService.deleteTransaction(targetId)
                                         }
                                     }
                                     loadFromApi()
@@ -294,7 +294,7 @@ class HistoryFragment : Fragment() {
             remoteId = id,
             amount = amount,
             name = name,
-            category = categoryName ?: name,
+            category = category ?: name ?: "Khac",
             note = note ?: "",
             type = type.lowercase(),
             timeStamp = timeStamp,
@@ -457,12 +457,12 @@ class HistoryFragment : Fragment() {
         tvMonthSavings.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(monthIncome - monthExpense)
     }
 
-    private fun groupExpensesByDate(expenses: List<Expense>): List<DailyExpense> {
+    private fun groupExpensesByDate(expenses: List<Expense>): List<DailyTransaction> {
         // Use cached formatter (thread-local to this fragment)
         return expenses
             .groupBy { dateFormatter.format(Date(it.timeStamp)) }
             .map { entry -> 
-                DailyExpense(
+                DailyTransaction(
                     entry.key, 
                     entry.value.sortedByDescending { it.timeStamp }
                 ) 

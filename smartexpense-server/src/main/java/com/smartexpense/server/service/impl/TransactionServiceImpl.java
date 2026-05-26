@@ -36,7 +36,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public TransactionResponse createTransaction(String userEmail, TransactionRequest request) {
         User user = findUser(userEmail);
-        Category category = findCategory(request.getCategoryId());
+        Category category = resolveCategory(user, request.getCategoryId(), request.getCategoryName());
         Transaction transaction = Transaction.builder()
                 .name(request.getName())
                 .amount(request.getAmount())
@@ -55,7 +55,7 @@ public class TransactionServiceImpl implements TransactionService {
         Transaction transaction = transactionRepository.findByIdAndUserId(transactionId, user.getId())
                 .orElseThrow(() -> new RuntimeException("Transaction not found"));
 
-        Category category = findCategory(request.getCategoryId());
+        Category category = resolveCategory(user, request.getCategoryId(), request.getCategoryName());
         transaction.setName(request.getName());
         transaction.setAmount(request.getAmount());
         transaction.setCategory(category);
@@ -80,7 +80,7 @@ public class TransactionServiceImpl implements TransactionService {
         User user = findUser(userEmail);
         List<TransactionResponse> responses = new ArrayList<>();
         for (TransactionRequest request : requests) {
-            Category category = findCategory(request.getCategoryId());
+            Category category = resolveCategory(user, request.getCategoryId(), request.getCategoryName());
             Transaction transaction = Transaction.builder()
                     .name(request.getName())
                     .amount(request.getAmount())
@@ -100,9 +100,24 @@ public class TransactionServiceImpl implements TransactionService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    private Category findCategory(Long categoryId) {
-        if (categoryId == null) return null;
-        return categoryRepository.findById(categoryId).orElse(null);
+    private Category resolveCategory(User user, Long categoryId, String categoryName) {
+        if (categoryId != null) {
+            return categoryRepository.findById(categoryId).orElse(null);
+        }
+        if (categoryName != null) {
+            String normalized = categoryName.trim();
+            if (normalized.isEmpty()) normalized = "Khac";
+            final String finalName = normalized;
+            return categoryRepository.findByNameAndUserId(finalName, user.getId())
+                    .or(() -> categoryRepository.findDefaultByName(finalName))
+                    .orElseGet(() -> categoryRepository.save(Category.builder()
+                            .name(finalName)
+                            .note(null)
+                            .isDefault(false)
+                            .user(user)
+                            .build()));
+        }
+        return null;
     }
 
     private String normalizeType(String type) {

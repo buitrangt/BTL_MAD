@@ -3,12 +3,12 @@ package com.arijit.budgettracker.utils
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import com.arijit.budgettracker.api.ExpenseRequest
+import com.arijit.budgettracker.api.TransactionRequest
 import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.api.TransactionResponse
 import com.arijit.budgettracker.db.Category
 import com.arijit.budgettracker.db.Expense
-import com.arijit.budgettracker.db.ExpenseDatabase
+import com.arijit.budgettracker.db.TransactionDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
@@ -21,30 +21,31 @@ object SyncManager {
 
         withContext(Dispatchers.IO) {
             try {
-                val db = ExpenseDatabase.getDatabase(context)
+                val db = TransactionDatabase.getDatabase(context)
                 val dao = db.expenseDao()
                 val categoryDao = db.categoryDao()
                 val api = RetrofitClient.getApiService(context)
 
-                val unsynced = dao.getUnsyncedExpenses()
+                val unsynced = dao.getUnsyncedTransactions()
                 if (unsynced.isNotEmpty()) {
                     val requests = unsynced.map { expense ->
-                        ExpenseRequest(
+                        TransactionRequest(
+                            name = expense.name,
                             amount = expense.amount,
-                            category = expense.category,
+                            categoryName = expense.category,
                             timeStamp = expense.timeStamp,
                             note = expense.note.takeIf { it.isNotBlank() },
                             type = expense.type
                         )
                     }
 
-                    val response = api.syncExpenses(requests)
+                    val response = api.syncTransactions(requests)
                     if (response.isSuccessful) {
                         dao.markAsSynced(unsynced.map { it.id })
                         // Backfill remoteId so future updates target the correct server row.
                         response.body().orEmpty().forEach { remote ->
                             val normalizedTs = normalizeTimestamp(remote.timeStamp)
-                            val local = dao.getOneByIdentity(remote.amount, remote.category, normalizedTs)
+                            val local = dao.getOneByIdentity(remote.amount, remote.category ?: "", normalizedTs)
                             if (local != null && local.remoteId == null) {
                                 dao.setRemoteId(local.id, remote.id)
                             }
@@ -84,15 +85,15 @@ object SyncManager {
         }
     }
 
-    private suspend fun upsertFromTransaction(dao: com.arijit.budgettracker.db.ExpenseDao, tx: TransactionResponse) {
+    private suspend fun upsertFromTransaction(dao: com.arijit.budgettracker.db.TransactionDao, tx: TransactionResponse) {
         val normalizedTimestamp = normalizeTimestamp(tx.timeStamp)
-        val category = tx.categoryName ?: tx.name
+        val category = tx.category ?: tx.name
         val normalizedType = tx.type.trim().lowercase().ifEmpty { "expense" }
 
         // 1) Prefer matching by remoteId (stable).
         val existingByRemote = dao.getByRemoteId(tx.id)
         if (existingByRemote != null) {
-            dao.updateExpense(
+            dao.updateTransaction(
                 existingByRemote.copy(
                     amount = tx.amount,
                     name = tx.name,
@@ -109,7 +110,7 @@ object SyncManager {
         // 2) If this was created locally, attach remoteId to it.
         val existingByIdentity = dao.getOneByIdentity(tx.amount, category, normalizedTimestamp)
         if (existingByIdentity != null) {
-            dao.updateExpense(
+            dao.updateTransaction(
                 existingByIdentity.copy(
                     remoteId = tx.id,
                     amount = tx.amount,
@@ -123,7 +124,7 @@ object SyncManager {
         }
 
         // 3) Otherwise insert as server-pulled row.
-        dao.insertExpense(
+        dao.insertTransaction(
             Expense(
                 remoteId = tx.id,
                 amount = tx.amount,
@@ -138,14 +139,14 @@ object SyncManager {
         )
     }
 
-    suspend fun deleteExpenseIfOnline(context: Context, expense: Expense): Boolean {
+    suspend fun deleteTransactionIfOnline(context: Context, expense: Expense): Boolean {
         if (!isOnline(context)) return false
         if (!TokenManager.isLoggedIn(context)) return false
 
         return withContext(Dispatchers.IO) {
             try {
                 val api = RetrofitClient.getApiService(context)
-                val remoteRes = api.getAllExpenses()
+                val remoteRes = api.getAllTransactions()
                 if (!remoteRes.isSuccessful) return@withContext false
 
                 val target = remoteRes.body()?.firstOrNull {
@@ -154,23 +155,24 @@ object SyncManager {
                         it.category == expense.category
                 } ?: return@withContext true
 
-                api.deleteExpense(target.id).isSuccessful
+                api.deleteTransaction(target.id).isSuccessful
             } catch (_: Exception) {
                 false
             }
         }
     }
 
-    suspend fun updateExpenseIfOnline(context: Context, oldExpense: Expense, newExpense: Expense): Boolean {
+    suspend fun updateTransactionIfOnline(context: Context, oldExpense: Expense, newExpense: Expense): Boolean {
         if (!isOnline(context)) return false
         if (!TokenManager.isLoggedIn(context)) return false
 
         return withContext(Dispatchers.IO) {
             try {
                 val api = RetrofitClient.getApiService(context)
-                val request = ExpenseRequest(
+                val request = TransactionRequest(
+                    name = newExpense.name,
                     amount = newExpense.amount,
-                    category = newExpense.category,
+                    categoryName = newExpense.category,
                     timeStamp = newExpense.timeStamp,
                     note = newExpense.note.takeIf { it.isNotBlank() },
                     type = newExpense.type
@@ -179,7 +181,7 @@ object SyncManager {
                 val targetId = newExpense.remoteId
                     ?: oldExpense.remoteId
                     ?: run {
-                        val remoteRes = api.getAllExpenses()
+                        val remoteRes = api.getAllTransactions()
                         if (!remoteRes.isSuccessful) return@withContext false
                         remoteRes.body()?.firstOrNull {
                             almostEqual(it.amount, oldExpense.amount) &&
@@ -188,7 +190,7 @@ object SyncManager {
                         }?.id
                     }
 
-                if (targetId != null) api.updateExpense(targetId, request).isSuccessful else false
+                if (targetId != null) api.updateTransaction(targetId, request).isSuccessful else false
             } catch (_: Exception) {
                 false
             }

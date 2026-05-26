@@ -89,7 +89,7 @@ class StatsViewModel(application: Application) : AndroidViewModel(application) {
                     val monthlyTotal = monthTx.sumOf { it.amount }
                     val categoryTotals = linkedMapOf<String, Double>()
                     for (t in monthTx) {
-                        val name = t.categoryName ?: "Khác"
+                        val name = t.category ?: "Khác"
                         categoryTotals[name] = (categoryTotals[name] ?: 0.0) + t.amount
                     }
 

@@ -10,20 +10,20 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.arijit.budgettracker.R
 import com.arijit.budgettracker.db.Expense
-import com.arijit.budgettracker.models.DailyExpense
+import com.arijit.budgettracker.models.DailyTransaction
 
 class HistoryAdapter(
     var onExpenseEditClick: ((Expense) -> Unit)? = null,
     var onExpenseDeleteClick: ((Expense) -> Unit)? = null
-) : ListAdapter<DailyExpense, HistoryAdapter.HistoryViewHolder>(DIFF_CALLBACK) {
+) : ListAdapter<DailyTransaction, HistoryAdapter.HistoryViewHolder>(DIFF_CALLBACK) {
 
     companion object {
-        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<DailyExpense>() {
-            override fun areItemsTheSame(oldItem: DailyExpense, newItem: DailyExpense): Boolean {
+        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<DailyTransaction>() {
+            override fun areItemsTheSame(oldItem: DailyTransaction, newItem: DailyTransaction): Boolean {
                 return oldItem.date == newItem.date
             }
 
-            override fun areContentsTheSame(oldItem: DailyExpense, newItem: DailyExpense): Boolean {
+            override fun areContentsTheSame(oldItem: DailyTransaction, newItem: DailyTransaction): Boolean {
                 return oldItem == newItem
             }
         }
