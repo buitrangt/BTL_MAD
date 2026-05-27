@@ -45,7 +45,9 @@ data class CategoryStat(
     val amount: Double,
     val percent: Double
 )
+// Yêu cầu đặt lại mật khẩu mới cho chức năng Quên mật khẩu
 data class ResetPasswordRequest(val email: String, val newPassword: String)
+// Yêu cầu đổi mật khẩu dành cho người dùng đã đăng nhập thành công
 data class ChangePasswordRequest(val oldPassword: String, val newPassword: String)
 data class CategoryRequest(val name: String, val note: String?)
 data class CategoryResponse(val id: Long, val name: String, val note: String?, val isDefault: Boolean)
@@ -85,9 +87,12 @@ data class InsightsSummaryDto(
     val aiNarrative: String? = null
 )
 
-// ======== CHAT DTOs ========
+// ======== CHAT DTOs (CÁC ĐỐI TƯỢNG TRUYỀN TẢI DỮ LIỆU CHATBOT AI) ========
+// Yêu cầu gửi tin nhắn đến FinChat (Gemini AI)
 data class ChatRequest(val message: String, val sessionId: String? = null)
+// Phản hồi từ FinChat chứa câu trả lời và sessionId phiên hội thoại
 data class ChatReply(val sessionId: String, val reply: String)
+// Chi tiết tin nhắn trò chuyện dùng để đồng bộ lịch sử chat
 data class ChatMessageDto(
     val id: Long,
     val sessionId: String,
@@ -134,10 +139,12 @@ data class AdminCategoryDto(
 data class AdminCategoryCreateRequest(val name: String, val note: String?)
 
 interface ApiService {
-    // Auth
+    // ======== CÁC API XÁC THỰC NGƯỜI DÙNG (AUTHENTICATION) ========
+    // API Đăng ký tài khoản mới
     @POST("api/auth/register")
     suspend fun register(@Body request: AuthRequest): Response<AuthResponse>
 
+    // API Đăng nhập hệ thống nhận JWT Token
     @POST("api/auth/login")
     suspend fun login(@Body request: AuthRequest): Response<AuthResponse>
 
@@ -200,15 +207,19 @@ interface ApiService {
         @Body request: UpdateProfileRequest
     ): Response<Void>
 
+    // API Quên mật khẩu: Yêu cầu gửi mã OTP xác nhận qua email
     @POST("api/auth/forgot-password")
     suspend fun forgotPassword(@Query("email") email: String): Response<ResponseBody>
 
+    // API Xác thực mã OTP người dùng nhập vào
     @POST("api/auth/verify-otp")
     suspend fun verifyOtp(@Query("email") email: String, @Query("otp") otp: String): Response<ResponseBody>
 
+    // API Đặt lại mật khẩu mới sau khi xác thực OTP thành công
     @POST("api/auth/reset-password")
     suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<ResponseBody>
 
+    // API Thay đổi mật khẩu khi người dùng đã đăng nhập
     @POST("api/auth/change-password")
     suspend fun changePassword(@Body request: ChangePasswordRequest): Response<ResponseBody>
 
@@ -251,17 +262,20 @@ interface ApiService {
     @POST("api/insights/refresh")
     suspend fun refreshInsights(): Response<InsightsSummaryDto>
 
-    // ===== FINCHAT (NEW Gemini-powered) =====
+    // ===== CÁC API GIAO TIẾP VỚI TRỢ LÝ TÀI CHÍNH ẢO FINCHAT AI =====
+    // API gửi tin nhắn hỏi FinChat và nhận phản hồi sinh ra bởi Gemini AI
     @POST("api/finchat/message")
     suspend fun sendChatMessage(@Body request: ChatRequest): Response<ChatReply>
 
+    // API truy vấn toàn bộ lịch sử trò chuyện của một phiên chat cụ thể
     @GET("api/finchat/history/{sessionId}")
     suspend fun getChatHistory(@Path("sessionId") sessionId: String): Response<List<ChatMessageDto>>
 
+    // API lấy danh sách các tin nhắn hội thoại gần đây của người dùng
     @GET("api/finchat/recent")
     suspend fun getRecentChatMessages(@Query("limit") limit: Int = 20): Response<List<ChatMessageDto>>
 
-    // ===== FINCHAT (legacy, kept for compat) =====
+    // API FinChat cũ (Legacy) phục vụ tương thích ngược
     @POST("api/finchat/ask")
     suspend fun askFinChat(
         @Query("message") message: String,

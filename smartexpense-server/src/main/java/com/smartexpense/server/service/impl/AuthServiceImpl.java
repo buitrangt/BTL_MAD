@@ -15,6 +15,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/**
+ * Lớp triển khai nghiệp vụ xác thực người dùng (AuthService)
+ * Xử lý: Đăng ký tài khoản, đăng nhập, cấp và kiểm tra OTP, đặt lại mật khẩu và đổi mật khẩu.
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -24,6 +28,12 @@ public class AuthServiceImpl implements AuthService {
     private final MailService mailService;
     private final JwtUtil jwtUtil;
 
+    /**
+     * Nghiệp vụ đăng ký tài khoản mới:
+     * 1. Kiểm tra sự tồn tại của Email trong DB
+     * 2. Mã hóa mật khẩu người dùng gửi lên
+     * 3. Lưu thông tin tài khoản mới và sinh JWT Token tự động đăng nhập
+     */
     @Override
     public AuthResponse register(AuthRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -41,6 +51,13 @@ public class AuthServiceImpl implements AuthService {
         return new AuthResponse(token, user.getEmail(), user.getName(), user.getRole(), user.getPhone());
     }
 
+    /**
+     * Nghiệp vụ đăng nhập hệ thống:
+     * 1. Kiểm tra Email có tồn tại không
+     * 2. So khớp mật khẩu đã hash dưới DB
+     * 3. Kiểm tra tài khoản có bị khóa không
+     * 4. Sinh JWT Token mới để xác thực phiên làm việc
+     */
     @Override
     public AuthResponse login(AuthRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
@@ -57,7 +74,15 @@ public class AuthServiceImpl implements AuthService {
         String token = jwtUtil.generateToken(user.getEmail());
         return new AuthResponse(token, user.getEmail(), user.getName(), user.getRole(), user.getPhone());
     }
-@Override
+
+    /**
+     * Nghiệp vụ gửi mã OTP phục vụ quên mật khẩu:
+     * 1. Kiểm tra email của người dùng có tồn tại trong hệ thống
+     * 2. Sinh ngẫu nhiên mã số OTP gồm 6 chữ số
+     * 3. Lưu OTP kèm thời gian hết hạn (5 phút) vào bảng otp_codes
+     * 4. Gọi dịch vụ MailService để gửi email chứa mã OTP đến người dùng
+     */
+    @Override
     public void sendOtp(String email) {
         if (!userRepository.existsByEmail(email)) {
             throw new RuntimeException("Email không tồn tại trong hệ thống!");
@@ -74,6 +99,11 @@ public class AuthServiceImpl implements AuthService {
         mailService.sendOtpEmail(email, otp);
     }
 
+    /**
+     * Nghiệp vụ đối chiếu mã xác thực OTP:
+     * 1. Tìm bản ghi OTP mới nhất của email trong DB
+     * 2. So khớp mã số OTP và kiểm tra xem mã đã hết hạn chưa (5 phút)
+     */
     @Override
     public boolean verifyOtp(String email, String otp) {
         return otpRepository.findTopByEmailOrderByExpiryTimeDesc(email)
@@ -82,6 +112,11 @@ public class AuthServiceImpl implements AuthService {
                 .orElse(false);
     }
 
+    /**
+     * Nghiệp vụ đặt lại mật khẩu mới:
+     * 1. Tìm tài khoản người dùng tương ứng với email
+     * 2. Mã hóa mật khẩu mới và lưu vào cơ sở dữ liệu
+     */
     @Override
     public void resetPassword(String email, String newPassword) {
         User user = userRepository.findByEmail(email)
@@ -92,6 +127,12 @@ public class AuthServiceImpl implements AuthService {
 
     }
 
+    /**
+     * Nghiệp vụ đổi mật khẩu (khi người dùng đã đăng nhập):
+     * 1. Đối chiếu mật khẩu cũ nhập vào
+     * 2. Kiểm tra mật khẩu mới phải khác mật khẩu cũ
+     * 3. Tiến hành mã hóa mật khẩu mới và lưu trữ
+     */
     @Override
     public void changePassword(String email, String oldPassword, String newPassword) {
         User user = userRepository.findByEmail(email)

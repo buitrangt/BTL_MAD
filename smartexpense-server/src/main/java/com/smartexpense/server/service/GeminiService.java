@@ -16,10 +16,9 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 
 /**
- * Gemini API client. Uses the public REST endpoint:
- *   POST {url}/{model}:generateContent?key={key}
- *
- * Maintains conversation history by sending all prior messages in the request.
+ * Service kết nối và giao tiếp với Google Gemini API (External AI Service)
+ * Đóng vai trò là đầu mối gửi ngữ cảnh tài chính, lịch sử chat và câu hỏi mới của người dùng
+ * sang mô hình AI để nhận về phản hồi tư vấn tài chính cá nhân hóa.
  */
 @Slf4j
 @Service
@@ -38,12 +37,12 @@ public class GeminiService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     /**
-     * Sends a chat completion request with system prompt + conversation history + new user message.
+     * Gửi yêu cầu sinh nội dung trò chuyện (generateContent) sang Google Gemini API.
      *
-     * @param systemPrompt   The financial context / instructions to seed the model.
-     * @param history        Prior messages of this session (oldest first), excluding the new user message.
-     * @param userMessage    The new user message.
-     * @return Plain text answer from Gemini, or an error string.
+     * @param systemPrompt   Ngữ cảnh dữ liệu tài chính (tổng chi tiêu hôm nay, tuần này, giao dịch gần nhất...) làm Prompt chỉ dẫn hệ thống.
+     * @param history        Lịch sử trò chuyện cũ của phiên chat hiện tại (bỏ qua tin nhắn mới của người dùng).
+     * @param userMessage    Tin nhắn/câu hỏi mới nhất của người dùng.
+     * @return Văn bản phản hồi (câu trả lời) từ Gemini API, hoặc chuỗi thông báo lỗi nếu có sự cố xảy ra.
      */
     public String chat(String systemPrompt, List<ChatMessage> history, String userMessage) {
         if (apiKey == null || apiKey.isBlank() || apiKey.startsWith("YOUR_")) {
@@ -51,18 +50,18 @@ public class GeminiService {
         }
 
         try {
+            // Khởi dựng URL gọi API của Google Gemini
             String url = baseUrl + "/" + model + ":generateContent?key=" + apiKey;
 
             JSONArray contents = new JSONArray();
 
-            // Inject system prompt as the first "user" turn (Gemini does not accept system role
-            // in v1beta gemini-2.0-flash; we prepend instructions to the conversation).
+            // Đưa system prompt làm lượt hội thoại đầu tiên để "mồi" dữ liệu tài chính cho AI
             if (systemPrompt != null && !systemPrompt.isBlank()) {
                 contents.put(makeContent("user", systemPrompt));
                 contents.put(makeContent("model", "Đã hiểu. Tôi sẽ tư vấn dựa trên dữ liệu tài chính trên."));
             }
 
-            // History
+            // Đưa lịch sử các tin nhắn cũ của phiên chat vào request để AI nắm bắt được luồng hội thoại
             if (history != null) {
                 for (ChatMessage msg : history) {
                     String role = "user".equals(msg.getRole()) ? "user" : "model";
@@ -70,9 +69,10 @@ public class GeminiService {
                 }
             }
 
-            // New user message
+            // Đưa tin nhắn mới nhất của người dùng vào cuối danh sách hội thoại
             contents.put(makeContent("user", userMessage));
 
+            // Đóng gói cấu trúc Payload JSON gửi đi
             JSONObject body = new JSONObject();
             body.put("contents", contents);
 
@@ -85,12 +85,15 @@ public class GeminiService {
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             HttpEntity<String> entity = new HttpEntity<>(body.toString(), headers);
+            
+            // Thực hiện cuộc gọi HTTP POST gửi Payload sang Google Gemini API
             ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
             if (response.getBody() == null) {
                 return "Không nhận được phản hồi từ AI.";
             }
 
+            // Phân tách kết quả JSON trả về để trích xuất văn bản trả lời của AI
             JSONObject json = new JSONObject(response.getBody());
             if (!json.has("candidates")) {
                 log.warn("Gemini response missing candidates: {}", response.getBody());
@@ -117,6 +120,9 @@ public class GeminiService {
         }
     }
 
+    /**
+     * Hàm phụ trợ đóng gói nội dung tin nhắn theo đúng định dạng cấu trúc JSON của Gemini API.
+     */
     private JSONObject makeContent(String role, String text) {
         JSONObject obj = new JSONObject();
         obj.put("role", role);

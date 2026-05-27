@@ -1,17 +1,12 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.smartexpense.server.dto;
 
-/**
- *
- * @author admin
- */
 import lombok.Data;
 
+/**
+ * Data Transfer Object (DTO) chứa yêu cầu đặt lại mật khẩu mới cho tài khoản (dùng sau xác thực OTP).
+ */
 @Data
 public class ResetPasswordRequest {
-    private String email;
-    private String newPassword;
+    private String email;       // Email của tài khoản cần đặt lại mật khẩu
+    private String newPassword;  // Mật khẩu mới cần lưu trữ
 }

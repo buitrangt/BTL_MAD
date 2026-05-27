@@ -43,26 +43,35 @@ public class ChatServiceImpl implements ChatService {
     private static final NumberFormat VND = NumberFormat.getInstance(new Locale("vi", "VN"));
     private static final TimeZone ZONE = TimeZone.getTimeZone("Asia/Bangkok");
 
+    /**
+     * Nghiệp vụ gửi tin nhắn trò chuyện với FinChat (AI):
+     * 1. Xác thực thông tin người dùng từ email.
+     * 2. Khởi tạo hoặc duy trì Session ID của phiên hội thoại.
+     * 3. Gọi hàm dựng Prompt hệ thống chứa ngữ cảnh dữ liệu giao dịch thu chi của người dùng.
+     * 4. Tải lịch sử chat cũ của phiên này từ DB để gửi kèm cho AI nắm ngữ cảnh hội thoại.
+     * 5. Giao tiếp với Gemini API qua GeminiService để lấy câu trả lời.
+     * 6. Lưu cả tin nhắn của người dùng và phản hồi của AI vào bảng chat_messages.
+     */
     @Override
     public ChatResponse sendMessage(String userEmail, String sessionId, String userMessage) {
         User user = findUser(userEmail);
 
-        // Resolve session id
+        // Khởi tạo mã phiên chat mới dạng UUID nếu Client chưa có
         String sid = (sessionId == null || sessionId.isBlank())
                 ? UUID.randomUUID().toString()
                 : sessionId;
 
-        // Build financial context from insights
+        // Dựng Prompt hệ thống chứa ngữ cảnh tài chính của user
         String systemPrompt = buildSystemPrompt(userEmail);
 
-        // Load history of this session
+        // Tải lịch sử tin nhắn cũ của phiên chat
         List<ChatMessage> history = chatMessageRepository
                 .findByUserIdAndSessionIdOrderByCreatedAtAsc(user.getId(), sid);
 
-        // Call Gemini
+        // Gọi Gemini sinh phản hồi
         String reply = geminiService.chat(systemPrompt, history, userMessage);
 
-        // Persist user message + assistant reply
+        // Lưu tin nhắn của người dùng xuống Database
         ChatMessage userMsg = ChatMessage.builder()
                 .userId(user.getId())
                 .sessionId(sid)
@@ -71,6 +80,7 @@ public class ChatServiceImpl implements ChatService {
                 .build();
         chatMessageRepository.save(userMsg);
 
+        // Lưu phản hồi của AI xuống Database
         ChatMessage botMsg = ChatMessage.builder()
                 .userId(user.getId())
                 .sessionId(sid)
@@ -85,6 +95,9 @@ public class ChatServiceImpl implements ChatService {
                 .build();
     }
 
+    /**
+     * Lấy toàn bộ lịch sử các tin nhắn của một phiên chat
+     */
     @Override
     public List<ChatMessageDto> getSessionHistory(String userEmail, String sessionId) {
         User user = findUser(userEmail);
@@ -95,6 +108,9 @@ public class ChatServiceImpl implements ChatService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Lấy danh sách tin nhắn gần đây nhất của người dùng
+     */
     @Override
     public List<ChatMessageDto> getRecentMessages(String userEmail, int limit) {
         User user = findUser(userEmail);
@@ -108,6 +124,7 @@ public class ChatServiceImpl implements ChatService {
 
     /**
      * Builds the system prompt that gives Gemini full financial context for the user.
+
      * Includes: spending classification, prediction, anomalies, budget suggestions.
      */
     private String buildSystemPrompt(String userEmail) {

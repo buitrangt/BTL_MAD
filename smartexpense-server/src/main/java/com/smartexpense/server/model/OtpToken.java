@@ -1,32 +1,31 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.smartexpense.server.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- *
- * @author admin
+ * Thực thể JPA (JPA Entity) đại diện cho bảng "otp_codes" lưu trữ tạm thời mã xác thực OTP dùng khi quên mật khẩu.
  */
 @Entity
+@Table(name = "otp_codes")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class OtpToken {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long id; // Khóa chính tự động tăng
     
-    private String email;
-    private String otpCode;
-    private LocalDateTime expiryTime;
+    @Column(nullable = false)
+    private String email; // Email đăng ký nhận mã xác thực OTP
+    
+    @Column(nullable = false)
+    private String otpCode; // Chuỗi mã OTP gồm 6 chữ số sinh ngẫu nhiên
+    
+    @Column(nullable = false)
+    private LocalDateTime expiryTime; // Thời điểm hết hạn hiệu lực của mã OTP (5 phút kể từ lúc tạo)
 }

@@ -9,18 +9,26 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
-// Import đúng class từ package api
 import com.arijit.budgettracker.api.AuthRequest
 import com.arijit.budgettracker.api.RetrofitClient
 import com.arijit.budgettracker.utils.TokenManager
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.launch
 
+/**
+ * Activity xử lý giao diện đăng nhập (Login Screen) của hệ thống.
+ * Chịu trách nhiệm:
+ * 1. Tự động kiểm tra trạng thái đăng nhập từ phiên trước (nếu có token -> chuyển tiếp màn hình tương ứng).
+ * 2. Phân quyền người dùng sau đăng nhập (ADMIN chuyển tới AdminOverviewActivity, USER chuyển tới MainActivity).
+ * 3. Kiểm duyệt dữ liệu nhập vào (email, mật khẩu).
+ * 4. Gọi API đăng nhập bất đồng bộ và xử lý kết quả thành công/lỗi.
+ */
 class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Kiểm tra đăng nhập - redirect theo role
+        // 1. Tự động kiểm tra phiên đăng nhập cũ
+        // Nếu người dùng đã đăng nhập trước đó và token chưa hết hạn, tự động chuyển màn hình theo Role
         if (TokenManager.isLoggedIn(this)) {
             val target = if (TokenManager.isAdmin(this)) {
                 AdminOverviewActivity::class.java
@@ -32,15 +40,18 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
+        // Kích hoạt chế độ hiển thị tràn viền (Edge-to-Edge)
         enableEdgeToEdge()
         setContentView(R.layout.activity_login)
 
+        // Thiết lập lắng nghe inset hệ thống để tự động điều chỉnh padding, tránh việc giao diện đè lên status bar
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
 
+        // Ánh xạ các thành phần giao diện (UI Views)
         val etEmail = findViewById<android.widget.EditText>(R.id.et_email)
         val etPassword = findViewById<android.widget.EditText>(R.id.et_password)
         val btnLogin = findViewById<MaterialButton>(R.id.btn_login)
@@ -48,32 +59,36 @@ class LoginActivity : AppCompatActivity() {
         val tvRegister = findViewById<TextView>(R.id.tv_register)
         val tvForgotPassword = findViewById<TextView>(R.id.tv_forgot_pw)
 
+        // 2. Thiết lập sự kiện click nút Đăng nhập
         btnLogin.setOnClickListener {
             val email = etEmail.text.toString().trim()
             val password = etPassword.text.toString().trim()
 
+            // Kiểm duyệt dữ liệu đầu vào: Không được để trống các trường bắt buộc
             if (email.isEmpty() || password.isEmpty()) {
-                tvError.text = "Please fill all fields"
+                tvError.text = "Vui lòng điền đầy đủ tất cả các trường dữ liệu"
                 tvError.visibility = View.VISIBLE
                 return@setOnClickListener
             }
 
+            // Vô hiệu hóa nút bấm tạm thời để chống click spam liên tục
             btnLogin.isEnabled = false
-            tvError.visibility = View.GONE // Ẩn lỗi cũ khi bắt đầu request mới
+            tvError.visibility = View.GONE // Ẩn thông báo lỗi cũ nếu có
 
+            // Khởi chạy Coroutine chạy bất đồng bộ trong vòng đời Activity
             lifecycleScope.launch {
                 try {
-                    // Sử dụng AuthRequest (phone truyền null vì login không cần phone)
+                    // Gọi API đăng nhập trên server thông qua Retrofit
                     val response = RetrofitClient.getApiService(this@LoginActivity)
                         .login(AuthRequest(email = email, password = password))
 
                     if (response.isSuccessful && response.body() != null) {
                         val authResponse = response.body()!!
 
-                        // Lưu Token
+                        // Lưu trữ JWT Token cục bộ bằng SharedPreferences thông qua TokenManager
                         TokenManager.saveToken(this@LoginActivity, authResponse.token)
 
-                        // Lưu thông tin User (Xử lý null an toàn cho name)
+                        // Lưu thông tin chi tiết người dùng
                         TokenManager.saveUser(
                             this@LoginActivity,
                             authResponse.email,
@@ -82,7 +97,7 @@ class LoginActivity : AppCompatActivity() {
                         )
                         TokenManager.saveRole(this@LoginActivity, authResponse.role)
 
-                        // Redirect theo role
+                        // Phân tích Role của người dùng để điều hướng phù hợp
                         val target = if ("ADMIN".equals(authResponse.role, ignoreCase = true)) {
                             AdminOverviewActivity::class.java
                         } else {
@@ -91,27 +106,27 @@ class LoginActivity : AppCompatActivity() {
                         startActivity(Intent(this@LoginActivity, target))
                         finish()
                     } else {
-                        tvError.text = "Invalid email or password"
+                        // Xử lý khi thông tin tài khoản hoặc mật khẩu không chính xác
+                        tvError.text = "Email hoặc mật khẩu không đúng!"
                         tvError.visibility = View.VISIBLE
                     }
                 } catch (e: Exception) {
-                    // nếu MainActivity bắt buộc phải có dữ liệu từ server.
-                    tvError.text = "Connection error: ${e.localizedMessage}"
+                    // Xử lý khi có lỗi kết nối mạng (server sập, mất internet)
+                    tvError.text = "Lỗi kết nối máy chủ: ${e.localizedMessage}"
                     tvError.visibility = View.VISIBLE
-
-                    // Code cho phép offline access:
-                    // startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                    // finish()
                 } finally {
+                    // Kích hoạt lại nút bấm đăng nhập
                     btnLogin.isEnabled = true
                 }
             }
         }
 
+        // 3. Sự kiện chuyển sang màn hình Đăng ký tài khoản mới
         tvRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
 
+        // 4. Sự kiện chuyển sang màn hình Quên mật khẩu
         tvForgotPassword.setOnClickListener {
             startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }
