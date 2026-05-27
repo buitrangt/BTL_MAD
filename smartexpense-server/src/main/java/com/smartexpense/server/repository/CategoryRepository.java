@@ -6,8 +6,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
 
+/**
+ * Repository thao tác với CSDL cho bảng danh mục (Categories).
+ * Thuộc luồng chức năng: Quản lý danh mục.
+ */
 public interface CategoryRepository extends JpaRepository<Category, Long> {
 
+    // Truy vấn danh sách danh mục của người dùng hoặc danh mục mặc định
     @Query("SELECT c FROM Category c WHERE c.user.id = :userId OR c.user IS NULL")
     List<Category> findByUserIdOrDefault(@Param("userId") Long userId);
 

@@ -10,6 +10,11 @@ import com.arijit.budgettracker.api.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel quản lý trạng thái và dữ liệu cho tính năng AI phân tích.
+ * Thuộc luồng chức năng: AI phân tích (Phân loại, Dự báo, Cảnh báo, Gợi ý ngân sách, Gợi ý thông minh).
+ * Nhận dữ liệu từ Backend và cung cấp cho InsightsActivity hiển thị.
+ */
 class InsightsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _summary = MutableLiveData<InsightsSummaryDto?>()
@@ -21,6 +26,7 @@ class InsightsViewModel(application: Application) : AndroidViewModel(application
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
+    // 1. Gọi API lấy toàn bộ dữ liệu phân tích từ AI (Dự báo, phân loại, cảnh báo, gợi ý)
     fun load() {
         _loading.value = true
         _error.value = null

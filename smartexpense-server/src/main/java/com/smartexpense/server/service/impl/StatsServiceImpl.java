@@ -17,6 +17,10 @@ import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+/**
+ * Service triển khai logic tính toán dữ liệu thống kê.
+ * Thuộc luồng chức năng: Xem chi tiêu (Hôm nay/Tuần/Tháng) và Xem thống kê chi tiết.
+ */
 @Service
 @RequiredArgsConstructor
 public class StatsServiceImpl implements StatsService {
@@ -75,6 +79,7 @@ public class StatsServiceImpl implements StatsService {
         return buildStats(user.getId(), start, end);
     }
 
+    // 1. Logic tính toán tổng chi tiêu hôm nay/tuần này/tháng này tính từ thời điểm hiện tại
     @Override
     public HomeOverviewResponse getHomeOverview(String userEmail) {
         User user = findUser(userEmail);
@@ -160,6 +165,7 @@ public class StatsServiceImpl implements StatsService {
                 .build();
     }
 
+    // 2. Logic thống kê chi tiêu tuần, phân bổ chi tiêu trong tháng, danh mục chi tiêu nhiều nhất theo mốc thời gian
     @Override
     public WeeklyOverviewResponse getWeeklyOverview(String userEmail) {
         User user = findUser(userEmail);

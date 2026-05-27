@@ -17,6 +17,10 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 
+/**
+ * Service tính toán và lưu trữ các phân tích AI từ dữ liệu giao dịch.
+ * Thuộc luồng chức năng: AI phân tích (Dự báo, Cảnh báo, Phân loại, Gợi ý ngân sách).
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -41,6 +45,7 @@ public class InsightsComputeServiceImpl implements InsightsComputeService {
         computeAllForUser(userId, today.getMonthValue(), today.getYear());
     }
 
+    // 1. Tổng hợp và thực thi tất cả các thuật toán AI phân tích cho người dùng
     @Override
     @Transactional
     public void computeAllForUser(Long userId, int month, int year) {
@@ -77,6 +82,7 @@ public class InsightsComputeServiceImpl implements InsightsComputeService {
         }
     }
 
+    // 2. Logic gọi thuật toán dự báo chi tiêu
     // ===== PREDICTION =====
     private void computePrediction(Long userId, int month, int year, List<Transaction> txs) {
         BigDecimal current = forecastEngine.currentMonthTotal(txs, month, year);
@@ -97,6 +103,7 @@ public class InsightsComputeServiceImpl implements InsightsComputeService {
         predictionRepo.save(entity);
     }
 
+    // 3. Logic gọi thuật toán phát hiện và cảnh báo chi tiêu bất thường
     // ===== ANOMALIES =====
     private void computeAnomalies(Long userId, int month, int year, List<Transaction> txs) {
         // Wipe previous results for this month then re-insert
@@ -117,6 +124,7 @@ public class InsightsComputeServiceImpl implements InsightsComputeService {
         }
     }
 
+    // 4. Logic gọi thuật toán phân loại mức chi tiêu (Tiết kiệm, Lãng phí...)
     // ===== CLASSIFICATION =====
     private void computeClassification(Long userId, int month, int year, List<Transaction> txs) {
         SpendingClassifier.Result r = spendingClassifier.classify(txs, month, year);
@@ -135,6 +143,7 @@ public class InsightsComputeServiceImpl implements InsightsComputeService {
         classificationRepo.save(entity);
     }
 
+    // 5. Logic gọi thuật toán tính toán và gợi ý ngân sách
     // ===== BUDGET SUGGESTION =====
     private void computeBudget(Long userId, int month, int year, List<Transaction> txs) {
         // Wipe previous results for this month then re-insert

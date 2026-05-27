@@ -10,6 +10,9 @@ import java.time.ZoneId;
 import java.util.List;
 
 /**
+ * Thuật toán phân loại mức độ chi tiêu (Tiết kiệm, Bình thường, Lãng phí) dựa trên tỷ lệ thu chi.
+ * Thuộc luồng chức năng: AI phân tích (Phân loại mức chi tiêu).
+ *
  * Classifies the user's spending level for the current month based on saving rate.
  *
  * Levels:
@@ -43,6 +46,7 @@ public class SpendingClassifier {
         }
     }
 
+    // 1. Logic tổng hợp thu chi trong tháng, tính tỷ lệ tiết kiệm và trả về kết quả phân loại tương ứng
     public Result classify(List<Transaction> transactions, int month, int year) {
         BigDecimal income = BigDecimal.ZERO;
         BigDecimal expense = BigDecimal.ZERO;

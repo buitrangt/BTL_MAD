@@ -10,6 +10,9 @@ import java.time.ZoneId;
 import java.util.*;
 
 /**
+ * Thuật toán tính toán và gợi ý ngân sách cho từng danh mục.
+ * Thuộc luồng chức năng: AI phân tích (Gợi ý ngân sách).
+ *
  * Suggests a budget per category for the upcoming month based on the average
  * spending of the previous N months (default 3), with simple smoothing.
  *
@@ -42,6 +45,7 @@ public class BudgetCalculator {
      * @param month        Target month (1..12) – the month the suggestion applies to.
      * @param year         Target year.
      */
+    // 1. Logic phân tích chi tiêu các tháng trước để tính trung bình và đưa ra gợi ý ngân sách cho từng danh mục
     public List<Suggestion> suggest(List<Transaction> transactions, int month, int year) {
         // Build the list of previous month keys (year*100 + month)
         LocalDate target = LocalDate.of(year, month, 1);

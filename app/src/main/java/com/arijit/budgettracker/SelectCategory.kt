@@ -26,6 +26,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.Normalizer
 
+/**
+ * Activity xử lý giao diện chọn, tìm kiếm và quản lý danh mục.
+ * Thuộc luồng chức năng: Quản lý danh mục (Tìm kiếm danh mục theo từ khóa, Thêm/Sửa/Xóa danh mục).
+ */
 class SelectCategory : AppCompatActivity() {
     companion object {
         private const val ADD_CATEGORY_REQUEST_CODE = 102
@@ -99,6 +103,7 @@ class SelectCategory : AppCompatActivity() {
         }
     }
 
+    // 1. Logic lọc danh mục theo từ khóa tìm kiếm
     private fun filterCategories(query: String) {
         val queryNorm = normalizeForSearch(query)
         val filtered = if (queryNorm.isEmpty()) {
@@ -232,6 +237,7 @@ class SelectCategory : AppCompatActivity() {
         return card
     }
 
+    // 3. Hiển thị menu tùy chọn để Sửa hoặc Xóa danh mục
     private fun showCategoryPopupMenu(view: android.view.View, category: CategoryResponse) {
         val popup = PopupMenu(this, view)
         popup.menuInflater.inflate(R.menu.menu_category_action, popup.menu)
@@ -268,6 +274,7 @@ class SelectCategory : AppCompatActivity() {
             .show()
     }
 
+    // 2. Logic gọi API xóa danh mục
     private fun deleteCategory(category: CategoryResponse) {
         lifecycleScope.launch {
             try {

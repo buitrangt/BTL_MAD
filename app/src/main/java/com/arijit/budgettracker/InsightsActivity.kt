@@ -22,6 +22,16 @@ import com.arijit.budgettracker.api.PredictionDto
 import com.arijit.budgettracker.models.InsightsViewModel
 import com.arijit.budgettracker.utils.CurrencyPrefs
 
+/**
+ * Activity hiển thị các phân tích và dự báo từ AI.
+ * Thuộc luồng chức năng: AI phân tích.
+ * Chịu trách nhiệm:
+ * 1. Dự báo chi tiêu trong tháng.
+ * 2. Cảnh báo chi tiêu bất thường.
+ * 3. Phân loại mức chi tiêu (Tiết kiệm, Bình thường, Lãng phí).
+ * 4. Gợi ý thông minh (Nhận xét chung từ AI).
+ * 5. Gợi ý ngân sách cho các danh mục.
+ */
 class InsightsActivity : AppCompatActivity() {
 
     private lateinit var vm: InsightsViewModel
@@ -109,7 +119,7 @@ class InsightsActivity : AppCompatActivity() {
         renderBudgets(data.budgetSuggestions)
     }
 
-    // ===== Prediction + Progress bar =====
+    // 1. Hiển thị dự báo chi tiêu trong tháng
     private fun renderPrediction(p: PredictionDto?) {
         if (p == null) {
             tvPredicted.text = "—"
@@ -120,7 +130,7 @@ class InsightsActivity : AppCompatActivity() {
         tvPredictedNote.text = "Dự kiến chi đến cuối tháng (hiện ${CurrencyPrefs.format(p.currentAmount)})"
     }
 
-    // ===== Alert (top anomaly) =====
+    // 2. Hiển thị cảnh báo chi tiêu bất thường
     private fun renderAlert(list: List<AnomalyDto>) {
         if (list.isEmpty()) {
             alertBadgeTitle.text = "Không có bất thường"
@@ -137,7 +147,7 @@ class InsightsActivity : AppCompatActivity() {
         alertAmount.setTextColor(Color.parseColor("#E53935"))
     }
 
-    // ===== Classification (3 pills) =====
+    // 3. Hiển thị phân loại mức chi tiêu hiện tại
     private fun renderClassification(c: ClassificationDto?) {
         if (c == null) {
             tvCategoryDescription.text = "Chưa có dữ liệu phân loại."
@@ -192,7 +202,7 @@ class InsightsActivity : AppCompatActivity() {
         tvCategoryDescription.text = c.note ?: "—"
     }
 
-    // ===== Budget suggestions =====
+    // 5. Hiển thị danh sách gợi ý ngân sách
     private fun renderBudgets(list: List<BudgetSuggestionDto>) {
         budgetList.removeAllViews()
         if (list.isEmpty()) {
@@ -267,6 +277,7 @@ class InsightsActivity : AppCompatActivity() {
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
 
+    // 4. Hiển thị gợi ý thông minh / nhận xét chung từ AI
     private fun renderAiNarrative(text: String?) {
         tvAiNarrative.text = text?.takeIf { it.isNotBlank() } ?: "Chưa cấu hình AI hoặc chưa đủ dữ liệu."
     }

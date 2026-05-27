@@ -13,6 +13,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Service triển khai logic xử lý danh mục.
+ * Thuộc luồng chức năng: Quản lý danh mục (Tìm kiếm, Thêm/Sửa/Xóa danh mục).
+ */
 @Service
 @RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
@@ -20,6 +24,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
 
+    // 1. Logic lấy danh sách danh mục (cho tính năng Tìm kiếm trên client)
     @Override
     public List<CategoryResponse> getAllCategories(String userEmail) {
         User user = findUser(userEmail);
@@ -29,6 +34,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .toList();
     }
 
+    // 2. Logic tạo mới danh mục
     @Override
     public CategoryResponse createCategory(String userEmail, CategoryRequest request) {
         User user = findUser(userEmail);
@@ -48,6 +54,7 @@ public class CategoryServiceImpl implements CategoryService {
         return toResponse(categoryRepository.save(category));
     }
 
+    // 3. Logic tìm và cập nhật danh mục (Sửa danh mục)
     @Override
     public CategoryResponse updateCategory(String userEmail, Long categoryId, CategoryRequest request) {
         User user = findUser(userEmail);
@@ -67,6 +74,7 @@ public class CategoryServiceImpl implements CategoryService {
         return toResponse(categoryRepository.save(category));
     }
 
+    // 4. Logic kiểm tra và xóa danh mục
     @Override
     public void deleteCategory(String userEmail, Long categoryId) {
         User user = findUser(userEmail);

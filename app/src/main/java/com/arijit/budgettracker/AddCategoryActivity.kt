@@ -19,6 +19,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/**
+ * Activity xử lý giao diện thêm mới hoặc chỉnh sửa danh mục (Category).
+ * Thuộc luồng chức năng: Quản lý danh mục (Thêm/Sửa danh mục).
+ * Chịu trách nhiệm:
+ * 1. Thu thập dữ liệu danh mục từ người dùng (tên danh mục, mô tả).
+ * 2. Gọi API để lưu mới hoặc cập nhật danh mục lên máy chủ.
+ */
 class AddCategoryActivity : AppCompatActivity() {
     private lateinit var etCategoryName: EditText
     private lateinit var etCategoryDescription: EditText
@@ -78,6 +85,7 @@ class AddCategoryActivity : AppCompatActivity() {
         }
     }
 
+    // 1. Logic kiểm tra và gọi API lưu danh mục (Thêm hoặc Sửa)
     private fun saveCategory() {
         val categoryName = etCategoryName.text.toString().trim()
         val categoryDescription = etCategoryDescription.text.toString().trim()

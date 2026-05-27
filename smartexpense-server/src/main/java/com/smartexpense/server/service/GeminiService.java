@@ -17,6 +17,7 @@ import java.util.List;
 
 /**
  * Service kết nối và giao tiếp với Google Gemini API (External AI Service)
+ * Thuộc luồng chức năng: AI phân tích (Gợi ý thông minh, Dự báo chi tiêu).
  * Đóng vai trò là đầu mối gửi ngữ cảnh tài chính, lịch sử chat và câu hỏi mới của người dùng
  * sang mô hình AI để nhận về phản hồi tư vấn tài chính cá nhân hóa.
  */

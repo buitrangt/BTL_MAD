@@ -148,6 +148,7 @@ interface ApiService {
     @POST("api/auth/login")
     suspend fun login(@Body request: AuthRequest): Response<AuthResponse>
 
+    // ======== LUỒNG: QUẢN LÝ GIAO DỊCH (Thêm/Sửa/Xóa, Xem lịch sử, Tìm kiếm) ========
     // Transactions (includes type field)
     @GET("api/transactions")
     suspend fun getAllTransactions(): Response<List<TransactionResponse>>
@@ -167,6 +168,7 @@ interface ApiService {
     @POST("api/transactions/sync")
     suspend fun syncTransactions(@Body requests: List<TransactionRequest>): Response<List<TransactionResponse>>
 
+    // ======== LUỒNG: QUẢN LÝ DANH MỤC (Tìm kiếm, Thêm/Sửa/Xóa) ========
     // Categories
     @GET("api/categories")
     suspend fun getAllCategories(): Response<List<CategoryResponse>>
@@ -180,6 +182,7 @@ interface ApiService {
     @DELETE("api/categories/{id}")
     suspend fun deleteCategory(@Path("id") id: Long): Response<Void>
 
+    // ======== LUỒNG: XEM CHI TIÊU & XEM THỐNG KÊ (Hôm nay/Tuần/Tháng, Xem theo ngày chọn) ========
     // Stats
     @GET("api/stats/home-overview")
     suspend fun getHomeOverview(): Response<HomeOverviewResponse>
@@ -255,6 +258,7 @@ interface ApiService {
     @DELETE("api/admin/categories/{id}")
     suspend fun deleteAdminCategory(@Path("id") id: Long): Response<Void>
 
+    // ======== LUỒNG: AI PHÂN TÍCH (Dự báo, Cảnh báo, Phân loại, Gợi ý thông minh, Gợi ý ngân sách) ========
     // ===== INSIGHTS =====
     @GET("api/insights/summary")
     suspend fun getInsightsSummary(): Response<InsightsSummaryDto>

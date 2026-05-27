@@ -19,8 +19,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Predicts total monthly spending using a linear regression on the daily series
- * built from the user's transactions in the current month.
+ * Engine chuyên dự báo tổng chi tiêu trong tháng (Sử dụng Local Regression hoặc gọi Gemini API).
+ * Thuộc luồng chức năng: AI phân tích (Dự báo chi tiêu trong tháng).
  *
  * Algorithm:
  *   1. Build daily totals (day of month → sum) for the current month so far.
@@ -68,6 +68,7 @@ public class ForecastEngine {
         return predictMonthlyTotalResult(transactions, month, year).predictedAmount;
     }
 
+    // 1. Logic tính toán và dự báo chi tiêu trong tháng hiện tại
     public ForecastResult predictMonthlyTotalResult(List<Transaction> transactions, int month, int year) {
         LocalDate firstOfMonth = LocalDate.of(year, month, 1);
         LocalDate lastOfMonth = firstOfMonth.withDayOfMonth(firstOfMonth.lengthOfMonth());
@@ -184,6 +185,7 @@ public class ForecastEngine {
      * Calls Gemini using daily totals only (Cách A).
      * Returns null if Gemini fails or response cannot be parsed safely.
      */
+    // 2. Logic gọi API ngoài (Gemini) để dự báo chi tiêu
     private BigDecimal geminiForecast(
             TreeMap<Integer, BigDecimal> dailyTotals,
             Map<String, BigDecimal> last90DailyTotals,

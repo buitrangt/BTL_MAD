@@ -16,6 +16,10 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Service triển khai logic tổng hợp dữ liệu phân tích từ AI.
+ * Thuộc luồng chức năng: AI phân tích (Dự báo, cảnh báo, phân loại, gợi ý ngân sách, gợi ý thông minh).
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -34,6 +38,7 @@ public class InsightsQueryServiceImpl implements InsightsQueryService {
     private final InsightsComputeService computeService;
     private final GeminiService geminiService;
 
+    // 1. Logic kiểm tra, tính toán (nếu cần) và lấy toàn bộ dữ liệu phân tích AI cho người dùng
     @Override
     public InsightsSummaryDto getSummary(String userEmail) {
         User user = findUser(userEmail);
@@ -78,6 +83,7 @@ public class InsightsQueryServiceImpl implements InsightsQueryService {
     }
 
     private InsightsSummaryDto assembleSummary(Long userId, int month, int year) {
+        // 2. Lấy dữ liệu Dự báo chi tiêu trong tháng
         // ===== Prediction =====
         PredictionDto predictionDto = predictionRepo
                 .findByUserIdAndMonthAndYear(userId, month, year)
@@ -90,6 +96,7 @@ public class InsightsQueryServiceImpl implements InsightsQueryService {
                         .build())
                 .orElse(null);
 
+        // 3. Lấy dữ liệu Phân loại mức chi tiêu
         // ===== Classification =====
         ClassificationDto classificationDto = classificationRepo
                 .findByUserIdAndMonthAndYear(userId, month, year)
@@ -102,6 +109,7 @@ public class InsightsQueryServiceImpl implements InsightsQueryService {
                         .build())
                 .orElse(null);
 
+        // 4. Lấy dữ liệu Cảnh báo chi tiêu bất thường
         // ===== Anomalies =====
         List<AiAnomaly> anomalyEntities = anomalyRepo
                 .findByUserIdAndMonthAndYear(userId, month, year);
@@ -114,6 +122,7 @@ public class InsightsQueryServiceImpl implements InsightsQueryService {
                         .build())
                 .collect(Collectors.toList());
 
+        // 5. Lấy dữ liệu Gợi ý ngân sách
         // ===== Budget suggestions =====
         List<AiBudgetSuggestion> budgetEntities = budgetRepo
                 .findByUserIdAndMonthAndYear(userId, month, year);
@@ -125,6 +134,7 @@ public class InsightsQueryServiceImpl implements InsightsQueryService {
                         .build())
                 .collect(Collectors.toList());
 
+        // 6. Logic lấy Gợi ý thông minh (AI Narrative) thông qua gọi API mô hình ngôn ngữ lớn (ví dụ Gemini)
         String aiNarrative = null;
         try {
             String prompt = buildAiNarrativePrompt(month, year, predictionDto, classificationDto, anomalies, budgets);

@@ -13,8 +13,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
 
+/**
+ * Lớp quản lý đồng bộ dữ liệu giữa thiết bị và máy chủ.
+ * Thuộc luồng chức năng: Quản lý giao dịch (Thêm/Sửa/Xóa giao dịch ngoại tuyến và trực tuyến).
+ */
 object SyncManager {
 
+    // 1. Đồng bộ các giao dịch mới thêm/sửa/xóa từ local lên máy chủ và ngược lại
     suspend fun syncIfOnline(context: Context) {
         if (!isOnline(context)) return
         if (!TokenManager.isLoggedIn(context)) return
@@ -139,6 +144,7 @@ object SyncManager {
         )
     }
 
+    // 2. Logic gọi API xóa giao dịch trên máy chủ
     suspend fun deleteTransactionIfOnline(context: Context, expense: Expense): Boolean {
         if (!isOnline(context)) return false
         if (!TokenManager.isLoggedIn(context)) return false
@@ -162,6 +168,7 @@ object SyncManager {
         }
     }
 
+    // 3. Logic gọi API cập nhật (sửa) giao dịch trên máy chủ
     suspend fun updateTransactionIfOnline(context: Context, oldExpense: Expense, newExpense: Expense): Boolean {
         if (!isOnline(context)) return false
         if (!TokenManager.isLoggedIn(context)) return false

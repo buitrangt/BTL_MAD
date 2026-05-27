@@ -25,6 +25,13 @@ import com.arijit.budgettracker.utils.AppRefreshBus
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
+/**
+ * Fragment hiển thị trang chủ của ứng dụng.
+ * Thuộc luồng chức năng: Xem chi tiêu hôm nay/tuần này/tháng này.
+ * Chịu trách nhiệm:
+ * 1. Hiển thị tổng quan chi tiêu theo các khoảng thời gian (Hôm nay, Tuần này, Tháng này) tính ở thời điểm xem.
+ * 2. Cung cấp truy cập nhanh đến chức năng Thêm giao dịch và AI phân tích.
+ */
 class HomeFragment : Fragment() {
     private lateinit var todayAmt: TextView
     private lateinit var thisWeekAmt: TextView
@@ -100,14 +107,17 @@ class HomeFragment : Fragment() {
         }
 
 
+        // 1. Hiển thị chi tiêu trong ngày hôm nay
         viewModel.todayAmount.observe(viewLifecycleOwner) {
             todayAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it)
         }
 
+        // 2. Hiển thị chi tiêu trong tuần này
         viewModel.weekAmount.observe(viewLifecycleOwner) {
             thisWeekAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it)
         }
 
+        // 3. Hiển thị chi tiêu trong tháng này
         viewModel.monthAmount.observe(viewLifecycleOwner) {
             thisMonthAmt.text = com.arijit.budgettracker.utils.CurrencyPrefs.format(it)
         }

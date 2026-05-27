@@ -8,8 +8,13 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * DAO xử lý các thao tác truy xuất, thêm, sửa, xóa với cơ sở dữ liệu nội bộ (Room) cho Giao dịch (Expense).
+ * Hỗ trợ các chức năng: Quản lý giao dịch (Thêm/Sửa/Xóa).
+ */
 @Dao
 interface TransactionDao {
+    // 1. Thêm mới một giao dịch vào cơ sở dữ liệu
     @Insert
     suspend fun insertTransaction(expense: Expense)
 
@@ -19,6 +24,7 @@ interface TransactionDao {
     @Insert
     suspend fun insertTransactions(expenses: List<Expense>)
 
+    // 2. Cập nhật thông tin một giao dịch đã tồn tại (Sửa giao dịch)
     @Update
     suspend fun updateTransaction(expense: Expense)
 
@@ -44,6 +50,7 @@ interface TransactionDao {
     """)
     fun getLatest8Expenses(): LiveData<List<Expense>>
 
+    // 3. Xóa một giao dịch khỏi cơ sở dữ liệu
     @Delete
     suspend fun deleteTransaction(expense: Expense)
 

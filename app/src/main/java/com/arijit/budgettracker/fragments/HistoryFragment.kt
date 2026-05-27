@@ -36,6 +36,15 @@ import android.widget.ImageButton
 import java.text.Normalizer
 import com.arijit.budgettracker.utils.AppRefreshBus
 
+/**
+ * Fragment hiển thị lịch sử giao dịch.
+ * Thuộc luồng chức năng: Quản lý giao dịch.
+ * Chịu trách nhiệm:
+ * 1. Xem lịch sử giao dịch.
+ * 2. Cung cấp chức năng Tìm kiếm giao dịch theo tên, ghi chú, danh mục.
+ * 3. Lọc giao dịch theo ngày tháng.
+ * 4. Hỗ trợ Sửa và Xóa giao dịch từ danh sách.
+ */
 class HistoryFragment : Fragment() {
     private lateinit var historyAdapter: HistoryAdapter
     private lateinit var containerRv: RecyclerView
@@ -147,8 +156,9 @@ class HistoryFragment : Fragment() {
             // Initialize apiService
             apiService = RetrofitClient.getApiService(requireContext())
             
-            // Setup adapter
+            // Setup adapter cho danh sách giao dịch
             historyAdapter = HistoryAdapter().apply {
+                // 1. Xử lý sự kiện nhấn Sửa giao dịch
                 onExpenseEditClick = { expense ->
                     val intent = Intent(requireContext(), com.arijit.budgettracker.AddTransActivity::class.java)
                     intent.putExtra("expenseId", expense.id)
@@ -161,6 +171,7 @@ class HistoryFragment : Fragment() {
                     intent.putExtra("timeStamp", expense.timeStamp)
                     startActivity(intent)
                 }
+                // 2. Xử lý sự kiện nhấn Xóa giao dịch
                 onExpenseDeleteClick = { expense ->
                     AlertDialog.Builder(requireContext())
                         .setTitle("Xóa giao dịch")
@@ -384,6 +395,7 @@ class HistoryFragment : Fragment() {
         }
     }
 
+    // Lọc danh sách giao dịch theo các tiêu chí: loại, từ khóa tìm kiếm và ngày tháng
     private fun applyLocalFilters(keyword: String) {
         val keywordNorm = normalizeForSearch(keyword)
         val filtered = allLocalExpenses
@@ -397,12 +409,14 @@ class HistoryFragment : Fragment() {
                 }
             }
             .filter { e ->
+                // 3. Lọc theo từ khóa tìm kiếm (tên, ghi chú, danh mục)
                 if (keywordNorm.isBlank()) true
                 else normalizeForSearch(e.category).contains(keywordNorm) ||
                     normalizeForSearch(e.name).contains(keywordNorm) ||
                     normalizeForSearch(e.note).contains(keywordNorm)
             }
             .filter { e ->
+                // 4. Lọc theo ngày tháng đã chọn
                 if (!isDateSelected) true
                 else {
                     val cal = Calendar.getInstance()

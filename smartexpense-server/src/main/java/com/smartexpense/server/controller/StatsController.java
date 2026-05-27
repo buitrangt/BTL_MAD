@@ -9,17 +9,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Controller xử lý các request lấy số liệu thống kê.
+ * Thuộc luồng chức năng: Xem chi tiêu hôm nay/tuần/tháng, Xem thống kê chi tiêu tuần/tháng.
+ */
 @RestController
 @RequestMapping("/api/stats")
 @RequiredArgsConstructor
 public class StatsController {
     private final StatsService statsService;
 
+    // 1. API lấy dữ liệu chi tiêu hôm nay/tuần này/tháng này (Sử dụng cho màn hình Home)
     @GetMapping("/home-overview")
     public ResponseEntity<HomeOverviewResponse> getHomeOverview(Authentication auth) {
         return ResponseEntity.ok(statsService.getHomeOverview(auth.getName()));
     }
 
+    // 2. API lấy dữ liệu thống kê chi tiêu trong tuần, phân bổ chi tiêu trong tháng (Sử dụng cho màn hình Thống kê)
     @GetMapping("/weekly-overview")
     public ResponseEntity<WeeklyOverviewResponse> getWeeklyOverview(Authentication auth) {
         return ResponseEntity.ok(statsService.getWeeklyOverview(auth.getName()));

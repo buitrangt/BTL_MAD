@@ -17,6 +17,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Service triển khai logic xử lý giao dịch.
+ * Thuộc luồng chức năng: Quản lý giao dịch (Thêm/Sửa/Xóa, Xem lịch sử, Tìm kiếm).
+ * Chịu trách nhiệm tương tác với Repository để lấy và lưu dữ liệu.
+ */
 @Service
 @RequiredArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
@@ -24,6 +29,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
 
+    // 1. Lấy danh sách giao dịch từ CSDL (Xem lịch sử giao dịch)
     @Override
     public List<TransactionResponse> getAllTransactions(String userEmail) {
         User user = findUser(userEmail);
@@ -33,6 +39,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .collect(Collectors.toList());
     }
 
+    // 2. Logic tạo mới giao dịch và lưu vào CSDL
     @Override
     public TransactionResponse createTransaction(String userEmail, TransactionRequest request) {
         User user = findUser(userEmail);
@@ -49,6 +56,7 @@ public class TransactionServiceImpl implements TransactionService {
         return toResponse(transactionRepository.save(transaction));
     }
 
+    // 3. Logic tìm và cập nhật giao dịch (Sửa giao dịch)
     @Override
     public TransactionResponse updateTransaction(String userEmail, Long transactionId, TransactionRequest request) {
         User user = findUser(userEmail);
@@ -66,6 +74,7 @@ public class TransactionServiceImpl implements TransactionService {
         return toResponse(transactionRepository.save(transaction));
     }
 
+    // 4. Logic xóa giao dịch khỏi CSDL
     @Override
     public void deleteTransaction(String userEmail, Long transactionId) {
         User user = findUser(userEmail);
@@ -128,6 +137,7 @@ public class TransactionServiceImpl implements TransactionService {
         return normalized.isEmpty() ? "expense" : normalized;
     }
 
+    // 5. Logic tìm kiếm giao dịch theo từ khóa
     @Override
     public List<TransactionResponse> searchTransactions(String userEmail, String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {

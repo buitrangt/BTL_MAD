@@ -1,4 +1,4 @@
-﻿package com.arijit.budgettracker
+package com.arijit.budgettracker
 
 import android.os.Bundle
 import android.view.View
@@ -23,6 +23,13 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * Activity xử lý giao diện thêm mới hoặc chỉnh sửa giao dịch (Transaction).
+ * Thuộc luồng chức năng: Quản lý giao dịch (Thêm/Sửa giao dịch).
+ * Chịu trách nhiệm:
+ * 1. Thu thập dữ liệu giao dịch từ người dùng (số tiền, loại, danh mục, ngày, ghi chú).
+ * 2. Gọi API để lưu mới hoặc cập nhật giao dịch lên máy chủ.
+ */
 class AddTransActivity : AppCompatActivity() {
     companion object {
         private const val CATEGORY_REQUEST_CODE = 101
@@ -270,6 +277,7 @@ class AddTransActivity : AppCompatActivity() {
         }
     }
 
+    // Thiết lập sự kiện lưu/cập nhật giao dịch khi nhấn xác nhận
     private fun saveTransaction() {
         confirmBtn.isEnabled = false
         lifecycleScope.launch {
@@ -286,8 +294,10 @@ class AddTransActivity : AppCompatActivity() {
             try {
                 val response = withContext(Dispatchers.IO) {
                     if (isEditMode && editingRemoteId != null) {
+                        // Gọi API cập nhật giao dịch đã có (Sửa giao dịch)
                         api.updateTransaction(editingRemoteId!!, request)
                     } else {
+                        // Gọi API tạo mới giao dịch (Thêm giao dịch)
                         api.createTransaction(request)
                     }
                 }
