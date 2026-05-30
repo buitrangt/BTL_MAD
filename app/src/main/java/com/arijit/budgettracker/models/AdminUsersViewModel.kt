@@ -11,6 +11,10 @@ import com.arijit.budgettracker.api.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel cho màn hình quản lý người dùng (Admin).
+ * Lo việc gọi API lấy danh sách user và khóa/mở khóa tài khoản.
+ */
 class AdminUsersViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _users = MutableLiveData<List<AdminUserDto>>(emptyList())
@@ -25,6 +29,7 @@ class AdminUsersViewModel(application: Application) : AndroidViewModel(applicati
     private val _lockResult = MutableLiveData<Pair<Long, Boolean>?>()
     val lockResult: LiveData<Pair<Long, Boolean>?> = _lockResult
 
+    // Tải danh sách người dùng (có hỗ trợ tìm kiếm theo từ khóa)
     fun load(search: String = "") {
         _loading.value = true
         _error.value = null
@@ -45,10 +50,12 @@ class AdminUsersViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    // Khóa hoặc mở khóa 1 tài khoản; cập nhật lại danh sách ngay trên giao diện
     fun setLocked(userId: Long, locked: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val api = RetrofitClient.getApiService(getApplication())
+                // Gọi API PATCH /api/admin/users/{id}/lock
                 val res = api.setAdminUserLock(userId, AdminLockRequest(locked))
                 if (res.isSuccessful) {
                     _lockResult.postValue(userId to locked)

@@ -15,6 +15,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Xử lý nghiệp vụ SMS phía server: trả về template ngân hàng và lưu giao dịch
+ * đồng bộ từ app (có chống trùng lặp).
+ */
 @Service
 @RequiredArgsConstructor
 public class SmsServiceImpl implements SmsService {
@@ -24,6 +28,7 @@ public class SmsServiceImpl implements SmsService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
 
+    // Lấy danh sách template ngân hàng đang được kích hoạt
     @Override
     public List<SmsTemplateResponse> getActiveTemplates() {
         return smsTemplateRepository.findByIsActiveTrue().stream()
@@ -38,6 +43,7 @@ public class SmsServiceImpl implements SmsService {
                 .collect(Collectors.toList());
     }
 
+    // Lưu các giao dịch SMS gửi từ app: mỗi giao dịch tạo 1 Transaction + 1 bản ghi SmsTransaction
     @Override
     @Transactional
     public List<SmsTransactionResponse> syncSmsTransactions(String userEmail, List<SmsTransactionRequest> requests) {
@@ -46,7 +52,7 @@ public class SmsServiceImpl implements SmsService {
 
         List<SmsTransactionResponse> responses = new ArrayList<>();
         for (SmsTransactionRequest req : requests) {
-            // Skip duplicates
+            // Bỏ qua nếu giao dịch đã tồn tại (chống trùng theo nội dung + thời gian)
             if (smsTransactionRepository.existsByUserIdAndRawContentAndTransactionTime(
                     user.getId(), req.getRawContent(), req.getTransactionTime())) {
                 continue;
@@ -90,6 +96,7 @@ public class SmsServiceImpl implements SmsService {
         return responses;
     }
 
+    // Tìm danh mục theo tên: ưu tiên danh mục của user, sau đó tới danh mục mặc định
     private Category resolveCategory(String categoryName, Long userId) {
         if (categoryName == null || categoryName.isEmpty()) return null;
         return categoryRepository.findByNameAndUserId(categoryName, userId)

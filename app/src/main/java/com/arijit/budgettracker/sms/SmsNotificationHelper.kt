@@ -11,12 +11,16 @@ import com.arijit.budgettracker.MainActivity
 import com.arijit.budgettracker.R
 import com.arijit.budgettracker.utils.CurrencyPrefs
 
+/**
+ * Tạo và hiển thị thông báo đẩy khi phát hiện giao dịch ngân hàng từ SMS.
+ */
 object SmsNotificationHelper {
 
     private const val CHANNEL_ID = "sms_transactions"
     private const val CHANNEL_NAME = "SMS Transactions"
     private val notificationId = java.util.concurrent.atomic.AtomicInteger(1000)
 
+    // Tạo kênh thông báo (bắt buộc từ Android 8.0 trở lên)
     fun createChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -31,6 +35,7 @@ object SmsNotificationHelper {
         }
     }
 
+    // Hiển thị thông báo giao dịch; nội dung khác nhau giữa thu (INCOME) và chi
     fun showTransactionNotification(
         context: Context,
         amount: Double,
@@ -51,6 +56,7 @@ object SmsNotificationHelper {
             text = "$category - $bankName"
         }
 
+        // Bấm vào thông báo sẽ mở MainActivity tại tab Lịch sử
         val intent = Intent(context, MainActivity::class.java).apply {
             putExtra("OPEN_TAB", 1)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP

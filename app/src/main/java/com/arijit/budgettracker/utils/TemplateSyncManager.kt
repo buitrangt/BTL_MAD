@@ -8,8 +8,13 @@ import com.arijit.budgettracker.db.SmsTemplate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+/**
+ * Tải danh sách mẫu (template) ngân hàng từ server về lưu vào Room
+ * để SmsParser dùng nhận diện SMS.
+ */
 object TemplateSyncManager {
 
+    // Gọi API lấy template rồi ghi đè/cập nhật vào DB cục bộ
     suspend fun syncTemplates(context: Context) {
         withContext(Dispatchers.IO) {
             try {

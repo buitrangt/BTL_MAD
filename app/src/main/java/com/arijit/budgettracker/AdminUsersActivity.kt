@@ -21,6 +21,9 @@ import com.arijit.budgettracker.api.AdminUserDto
 import com.arijit.budgettracker.models.AdminUsersViewModel
 import com.google.android.material.switchmaterial.SwitchMaterial
 
+/**
+ * Màn hình Admin xem danh sách người dùng và khóa/mở khóa tài khoản.
+ */
 class AdminUsersActivity : AppCompatActivity() {
 
     private lateinit var vm: AdminUsersViewModel
@@ -55,6 +58,7 @@ class AdminUsersActivity : AppCompatActivity() {
             true
         }
 
+        // Lắng nghe dữ liệu từ ViewModel để cập nhật giao diện
         vm = ViewModelProvider(this)[AdminUsersViewModel::class.java]
         vm.users.observe(this) { render(it) }
         vm.loading.observe(this) { progressBar.visibility = if (it) View.VISIBLE else View.GONE }
@@ -71,6 +75,7 @@ class AdminUsersActivity : AppCompatActivity() {
         vm.load()
     }
 
+    // Vẽ danh sách người dùng ra màn hình; mỗi dòng có công tắc khóa/mở khóa
     private fun render(list: List<AdminUserDto>) {
         listContainer.removeAllViews()
         if (list.isEmpty()) {
@@ -115,6 +120,7 @@ class AdminUsersActivity : AppCompatActivity() {
         }
     }
 
+    // Hiện hộp thoại xác nhận trước khi khóa/mở khóa tài khoản
     private fun confirmLock(u: AdminUserDto, lock: Boolean, onResult: (Boolean) -> Unit) {
         val title = if (lock) "Khóa tài khoản?" else "Mở khóa tài khoản?"
         val msg = if (lock)
@@ -130,5 +136,6 @@ class AdminUsersActivity : AppCompatActivity() {
             .show()
     }
 
+    // Đổi đơn vị dp sang pixel
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 }

@@ -27,6 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Xử lý nghiệp vụ phân hệ Admin: tính số liệu thống kê tổng quan,
+ * quản lý người dùng (tìm kiếm, khóa/mở khóa) và danh mục mặc định.
+ */
 @Service
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
@@ -37,6 +41,7 @@ public class AdminServiceImpl implements AdminService {
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
 
+    // Tổng hợp số liệu cho dashboard: tổng user, user mới, user hoạt động, biểu đồ tuần...
     @Override
     public AdminOverviewResponse getOverview() {
         long totalUsers = userRepository.count();
@@ -54,6 +59,7 @@ public class AdminServiceImpl implements AdminService {
                 firstOfMonth.atStartOfDay()
         );
 
+        // % thay đổi số user đăng ký so với tháng trước
         double totalChange = computePercent(createdThisMonth, createdLastMonth);
 
         long newToday = userRepository.countByCreatedAtBetween(
@@ -70,6 +76,7 @@ public class AdminServiceImpl implements AdminService {
         long endOfDayMs = today.plusDays(1).atStartOfDay(ZONE).toInstant().toEpochMilli();
         long startYesterdayMs = today.minusDays(1).atStartOfDay(ZONE).toInstant().toEpochMilli();
 
+        // Số user "hoạt động" = số user khác nhau có phát sinh giao dịch trong ngày
         long activeToday = transactionRepository.findAll().stream()
                 .filter(t -> t.getTimeStamp() != null
                         && t.getTimeStamp() >= startOfDayMs
@@ -90,6 +97,7 @@ public class AdminServiceImpl implements AdminService {
 
         double activeChange = computePercent(activeToday, activeYesterday);
 
+        // Đếm số user đăng ký theo từng ngày trong tuần hiện tại (để vẽ biểu đồ cột)
         LocalDate monday = today.with(DayOfWeek.MONDAY);
         LocalDate sundayNext = monday.plusDays(7);
 
@@ -139,6 +147,7 @@ public class AdminServiceImpl implements AdminService {
                 .build();
     }
 
+    // Lấy danh sách user có phân trang + tìm kiếm, sắp xếp mới nhất trước
     @Override
     public AdminUsersPageResponse listUsers(String search, int page, int size) {
         int safePage = Math.max(0, page);
@@ -161,6 +170,7 @@ public class AdminServiceImpl implements AdminService {
                 .build();
     }
 
+    // Cập nhật trạng thái khóa/mở khóa của 1 tài khoản
     @Override
     @Transactional
     public AdminUserDto setUserLocked(Long userId, boolean locked) {
@@ -171,6 +181,7 @@ public class AdminServiceImpl implements AdminService {
         return toUserDto(user);
     }
 
+    // Danh sách danh mục mặc định của hệ thống
     @Override
     public List<AdminCategoryDto> listDefaultCategories() {
         return categoryRepository.findAllDefault().stream()
@@ -178,6 +189,7 @@ public class AdminServiceImpl implements AdminService {
                 .collect(Collectors.toList());
     }
 
+    // Thêm danh mục mặc định mới (kiểm tra tên rỗng và trùng lặp)
     @Override
     @Transactional
     public AdminCategoryDto createDefaultCategory(AdminCategoryCreateRequest req) {
@@ -198,6 +210,7 @@ public class AdminServiceImpl implements AdminService {
         return toCategoryDto(c);
     }
 
+    // Xóa danh mục mặc định (không cho xóa danh mục thuộc về người dùng)
     @Override
     @Transactional
     public void deleteDefaultCategory(Long id) {
@@ -231,6 +244,7 @@ public class AdminServiceImpl implements AdminService {
                 .build();
     }
 
+    // Tính phần trăm thay đổi giữa kỳ này và kỳ trước
     private double computePercent(long current, long previous) {
         if (previous == 0) return current == 0 ? 0.0 : 100.0;
         return ((double) (current - previous) / previous) * 100.0;

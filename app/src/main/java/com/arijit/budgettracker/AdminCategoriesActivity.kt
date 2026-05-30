@@ -21,6 +21,9 @@ import com.arijit.budgettracker.api.AdminCategoryDto
 import com.arijit.budgettracker.models.AdminCategoriesViewModel
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
+/**
+ * Màn hình Admin quản lý danh mục mặc định của hệ thống (thêm/xóa).
+ */
 class AdminCategoriesActivity : AppCompatActivity() {
 
     private lateinit var vm: AdminCategoriesViewModel
@@ -62,6 +65,7 @@ class AdminCategoriesActivity : AppCompatActivity() {
         vm.load()
     }
 
+    // Vẽ danh sách danh mục; mỗi dòng có nút xóa
     private fun render(list: List<AdminCategoryDto>) {
         listContainer.removeAllViews()
         if (list.isEmpty()) {
@@ -88,6 +92,7 @@ class AdminCategoriesActivity : AppCompatActivity() {
         }
     }
 
+    // Hộp thoại nhập tên + ghi chú để thêm danh mục mặc định mới
     private fun showAddDialog() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_add_category, null)
         val etName = view.findViewById<EditText>(R.id.etName)
@@ -110,6 +115,7 @@ class AdminCategoriesActivity : AppCompatActivity() {
             .show()
     }
 
+    // Hộp thoại xác nhận trước khi xóa 1 danh mục
     private fun confirmDelete(c: AdminCategoryDto) {
         AlertDialog.Builder(this)
             .setTitle("Xóa danh mục?")

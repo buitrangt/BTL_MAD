@@ -90,6 +90,7 @@ object SyncManager {
         }
     }
 
+    // Thêm mới hoặc cập nhật 1 giao dịch lấy từ server vào DB cục bộ (tránh trùng lặp)
     private suspend fun upsertFromTransaction(dao: com.arijit.budgettracker.db.TransactionDao, tx: TransactionResponse) {
         val normalizedTimestamp = normalizeTimestamp(tx.timeStamp)
         val category = tx.category ?: tx.name
@@ -204,14 +205,17 @@ object SyncManager {
         }
     }
 
+    // So sánh 2 số tiền gần bằng nhau (tránh sai số dấu phẩy động)
     private fun almostEqual(a: Double, b: Double): Boolean {
         return abs(a - b) < 0.0001
     }
 
+    // Chuẩn hóa mốc thời gian về mili-giây (server có thể trả về giây)
     private fun normalizeTimestamp(timeStamp: Long): Long {
         return if (timeStamp in 1..9_999_999_999L) timeStamp * 1000 else timeStamp
     }
 
+    // Kiểm tra thiết bị có đang kết nối Internet không
     private fun isOnline(context: Context): Boolean {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = cm.activeNetwork ?: return false

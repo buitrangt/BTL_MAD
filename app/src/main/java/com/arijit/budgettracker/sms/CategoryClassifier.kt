@@ -2,8 +2,12 @@ package com.arijit.budgettracker.sms
 
 import java.text.Normalizer
 
+/**
+ * Tự động đoán danh mục chi tiêu dựa trên từ khóa trong nội dung SMS.
+ */
 object CategoryClassifier {
 
+    // Bảng từ khóa: mỗi danh mục ứng với các từ thường gặp (đã bỏ dấu)
     private val CATEGORY_KEYWORDS = mapOf(
         "Ăn uống" to listOf(
             "an uong", "nha hang", "cafe", "coffee", "com", "bun", "pho",
@@ -35,6 +39,7 @@ object CategoryClassifier {
         )
     )
 
+    // Trả về tên danh mục đầu tiên khớp từ khóa, nếu không khớp thì "Khác"
     fun classify(smsContent: String): String {
         val normalized = removeDiacritics(smsContent.lowercase())
 
@@ -49,6 +54,7 @@ object CategoryClassifier {
         return "Khác"
     }
 
+    // Bỏ dấu tiếng Việt để so khớp từ khóa chính xác hơn
     private fun removeDiacritics(input: String): String {
         val normalized = Normalizer.normalize(input, Normalizer.Form.NFD)
         return normalized.replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")

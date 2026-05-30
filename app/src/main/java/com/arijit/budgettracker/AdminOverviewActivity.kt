@@ -26,6 +26,10 @@ import com.arijit.budgettracker.models.AdminViewModel
 import com.arijit.budgettracker.utils.TokenManager
 import com.google.android.material.navigation.NavigationView
 
+/**
+ * Màn hình tổng quan (dashboard) của Admin: thống kê người dùng,
+ * biểu đồ đăng ký theo tuần và danh sách người dùng gần đây.
+ */
 class AdminOverviewActivity : AppCompatActivity() {
 
     private lateinit var vm: AdminViewModel
@@ -111,6 +115,7 @@ class AdminOverviewActivity : AppCompatActivity() {
             name.firstOrNull()?.uppercaseChar()?.toString() ?: "A"
     }
 
+    // Thiết lập menu điều hướng bên trái (Tổng quan / Người dùng / Danh mục / Đăng xuất)
     private fun setupDrawerNavigation() {
         navView.setCheckedItem(R.id.nav_overview)
         navView.setNavigationItemSelectedListener { item ->
@@ -143,6 +148,7 @@ class AdminOverviewActivity : AppCompatActivity() {
         }
     }
 
+    // Đăng xuất: xóa token và quay về màn hình đăng nhập
     private fun doLogout() {
         TokenManager.logout(this)
         startActivity(
@@ -158,6 +164,7 @@ class AdminOverviewActivity : AppCompatActivity() {
         if (::vm.isInitialized) vm.load()
     }
 
+    // Đổ dữ liệu thống kê nhận từ server ra các thẻ số liệu và biểu đồ
     private fun render(d: AdminOverviewResponse) {
         tvTotalUsers.text = formatCount(d.totalUsers)
         tvTotalChange.text = formatChange(d.percentChangeVsLastMonth)
@@ -195,6 +202,7 @@ class AdminOverviewActivity : AppCompatActivity() {
         }
     }
 
+    // Vẽ biểu đồ cột số lượng đăng ký theo từng ngày trong tuần
     private fun renderBarChart(map: Map<String, Long>) {
         barChartContainer.removeAllViews()
         barLabelsContainer.removeAllViews()
@@ -234,6 +242,7 @@ class AdminOverviewActivity : AppCompatActivity() {
         }
     }
 
+    // Vẽ danh sách người dùng đăng ký gần đây
     private fun renderRecentUsers(list: List<AdminUserDto>) {
         userListContainer.removeAllViews()
         if (list.isEmpty()) {

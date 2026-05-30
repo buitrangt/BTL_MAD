@@ -3,12 +3,17 @@ package com.arijit.budgettracker.sms
 import android.util.Log
 import com.arijit.budgettracker.db.SmsTemplate
 
+// Kết quả bóc tách 1 SMS: số tiền, loại (INCOME/EXPENSE) và tên ngân hàng
 data class ParsedSms(
     val amount: Double,
     val type: String,
     val bankName: String
 )
 
+/**
+ * Bóc tách nội dung SMS ngân hàng thành giao dịch (số tiền + thu/chi + ngân hàng)
+ * bằng các từ khóa và biểu thức chính quy (regex).
+ */
 object SmsParser {
 
     private const val TAG = "SmsParser"
@@ -48,9 +53,14 @@ object SmsParser {
         """(?<![\d.,])([+\-])?\s*(\d{1,3}(?:\.\d{3})+|\d{1,3}(?:,\d{3})+)(?![.,]?\d)"""
     )
 
+    /**
+     * Hàm chính: trả về [ParsedSms] nếu là SMS giao dịch hợp lệ, ngược lại trả null.
+     * Quy trình: nhận diện ngân hàng -> kiểm tra từ khóa -> lấy số tiền -> xác định thu/chi.
+     */
     fun parse(smsContent: String, sender: String, templates: List<SmsTemplate>): ParsedSms? {
         val bankName = identifyBank(smsContent, sender, templates) ?: sender
 
+        // Bỏ qua SMS không chứa từ khóa ngân hàng (quảng cáo, OTP...)
         if (!hasBankKeyword(smsContent)) {
             Log.d(TAG, "No bank keyword in: $smsContent")
             return null
@@ -70,6 +80,7 @@ object SmsParser {
         return ParsedSms(amount, type, bankName)
     }
 
+    // Tìm ngân hàng khớp với người gửi/nội dung dựa trên danh sách template
     private fun identifyBank(
         smsContent: String,
         sender: String,
@@ -82,6 +93,7 @@ object SmsParser {
         return match?.bankName
     }
 
+    // Kiểm tra SMS có chứa ít nhất 1 từ khóa đặc trưng của ngân hàng không
     private fun hasBankKeyword(smsContent: String): Boolean {
         return BANK_KEYWORDS.any { kw -> containsWord(smsContent, kw) >= 0 }
     }
@@ -106,12 +118,14 @@ object SmsParser {
             .maxByOrNull { it.first }
     }
 
+    // Bỏ dấu phân cách nghìn (. ,) rồi đổi chuỗi số sang Double
     private fun parseNumber(raw: String): Double? = try {
         raw.replace(".", "").replace(",", "").toDouble()
     } catch (e: NumberFormatException) {
         null
     }
 
+    // Xác định thu/chi: ưu tiên dấu +/-, nếu không có thì dựa vào từ khóa xuất hiện trước
     private fun detectType(smsContent: String, signHint: String?): String {
         if (signHint == "+") return "INCOME"
         if (signHint == "-") return "EXPENSE"
